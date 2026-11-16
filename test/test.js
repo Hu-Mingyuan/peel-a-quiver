@@ -83,7 +83,7 @@ for (let k = 0; k < 3; k++) {
   }
 }
 
-// 8. Level 2（FG SL_4 四边形）：和 tools/fg.js 生成的一致，并且按求解器找到的解能剥完
+// 8. Level 1（FG SL_4 四边形）：和 tools/fg.js 生成的一致，并且按求解器找到的解能剥完
 const { fgQuad } = require('../tools/fg.js');
 const B2 = fgQuad(4).B;
 function play(B, moves) {
