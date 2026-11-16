@@ -83,4 +83,23 @@ for (let k = 0; k < 3; k++) {
   }
 }
 
+// 8. Level 2（FG SL_4 四边形）：和 tools/fg.js 生成的一致，并且按求解器找到的解能剥完
+const { fgQuad } = require('../tools/fg.js');
+const B2 = fgQuad(4).B;
+function play(B, moves) {
+  let labels = B.map((_, i) => i + 1);
+  for (const mv of moves) {
+    const [op, l] = mv.split(' '), i = labels.indexOf(Number(l));
+    assert.ok(i >= 0, mv);
+    if (op === 'mu') B = Q.mutate(B, i);
+    else {
+      assert.ok(Q.isSink(B, i) || Q.isSource(B, i), `${mv} 不是 sink/source`);
+      B = Q.deleteVertex(B, i); labels = labels.filter((_, j) => j !== i);
+    }
+  }
+  return B;
+}
+const sol2 = 'mu 1,mu 2,mu 4,mu 3,peel 7,peel 3,mu 4,mu 5,mu 2,mu 1,peel 4,peel 5,peel 1,mu 6,peel 2,peel 8,peel 6,peel 9'.split(',');
+assert.strictEqual(play(B2, sol2).length, 0);
+
 console.log('all tests passed');
