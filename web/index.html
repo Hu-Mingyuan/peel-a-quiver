@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Peel a quiver</title>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1d1d1b; --muted: #6b6b66; --line: #d9d8d2;
+    --btn: #ffffff; --btn-active: #1d1d1b; --btn-active-fg: #ffffff;
+    --sink: #2f6fdb; --source: #e07a1f; --both: #2e9d5b; --node: #ffffff; --aux: #8a5cd1;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.5 -apple-system, "PingFang SC", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  h2 { font-size: 16px; margin: 0 0 2px; }
+  .sub { color: var(--muted); margin: 0 0 12px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .toolbar .sep { width: 12px; }
+  button { font: inherit; padding: 6px 12px; border: 1px solid var(--line); background: var(--btn);
+           color: var(--fg); border-radius: 6px; cursor: pointer; }
+  button.active { background: var(--btn-active); color: var(--btn-active-fg); border-color: var(--btn-active); }
+  button:disabled { opacity: .4; cursor: default; }
+  #status { min-height: 1.5em; margin: 4px 0 8px; }
+  #status.win { font-weight: 600; color: var(--both); }
+  .canvas-wrap { border: 1px solid var(--line); border-radius: 8px; background: #fff; touch-action: none; }
+  canvas { display: block; width: 100%; height: 480px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: 13px; margin: 8px 0; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+  #history { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; color: var(--muted);
+             word-break: break-word; }
+  details { margin-top: 12px; color: var(--muted); }
+  [hidden] { display: none !important; }
+  .intro { color: var(--muted); margin: 0 0 16px; max-width: 640px; }
+  .levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .card { display: block; text-align: left; padding: 0; border: 1px solid var(--line); border-radius: 8px;
+          background: #fff; color: var(--fg); overflow: hidden; cursor: pointer; }
+  .card:hover { border-color: var(--fg); }
+  .card canvas { height: 150px; border-bottom: 1px solid var(--line); }
+  .card .meta { padding: 8px 12px 10px; }
+  .card .num { color: var(--muted); font-size: 13px; }
+  .card .name { font-weight: 600; }
+  .card .solved { color: var(--both); font-size: 13px; font-weight: 600; margin-left: 6px; }
+  .back { margin-bottom: 10px; }
+  .credit { color: var(--muted); font-size: 13px; margin-top: 20px; }
+  .credit a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Peel a quiver</h1>
+
+  <section id="menuView">
+    <p class="intro">Peel each quiver down to the empty quiver using mutations, removing sinks and sources, and, if needed, adding auxiliary nodes.</p>
+    <div class="levels" id="levelList"></div>
+    <p class="credit">Based on Bernhard Keller's <a href="https://webusers.imj-prg.fr/~bernhard.keller/quivermutation/" target="_blank" rel="noopener">quiver mutation applet</a>.</p>
+  </section>
+
+  <section id="gameView" hidden>
+  <button class="back" id="btnBack">← Levels</button>
+  <h2 id="levelTitle"></h2>
+  <p class="sub" id="levelDesc"></p>
+
+  <div class="toolbar">
+    <button id="btnMutate" class="active">Mutate</button>
+    <button id="btnPeel">Peel sink/source</button>
+    <button id="btnAddNode">Add node</button>
+    <button id="btnDone">Done</button>
+    <span class="sep"></span>
+    <button id="btnUndo">Undo</button>
+    <button id="btnReset">Restart</button>
+  </div>
+  <div id="status"></div>
+
+  <div class="canvas-wrap"><canvas id="cv"></canvas></div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--sink)"></span>sink</span>
+    <span><span class="dot" style="background:var(--source)"></span>source</span>
+    <span><span class="dot" style="background:var(--both)"></span>isolated (both sink and source)</span>
+    <span><span class="dot" style="border:2px dashed var(--aux)"></span>auxiliary node</span>
+  </div>
+  <div id="history"></div>
+
+  <details>
+    <summary>Rules</summary>
+    <p>Goal: peel the quiver down to the empty quiver.</p>
+    <ul>
+      <li><b>Mutate</b>: click a vertex to mutate there. For each path i→k→j add an arrow i→j, reverse all arrows at k, then cancel 2-cycles. Dragging a vertex only moves it.</li>
+      <li><b>Peel sink/source</b>: click a coloured vertex (a sink or a source) to delete it.</li>
+      <li><b>Add node</b>: click an empty spot to place a new vertex, then, as in Keller's applet, click a source and then a target to add one arrow; adding an arrow in the opposite direction cancels one. Every arrow must touch the new vertex. Press "Done" when finished.</li>
+    </ul>
+    <p>The quiver can be peeled ⇔ it is sub-peelable. It can be peeled without adding nodes ⇔ it is peelable.</p>
+  </details>
+  </section>
+</main>
+
+<script src="quiver.js"></script>
+<script>
+(function () {
+  'use strict';
+  const Q = window.QuiverCore;
+
+  // ---------- 关卡 ----------
+  // pos 的 y 轴向上，载入时缩放到画布。
+  const LEVELS = [
+    {
+      id: 'W',
+      num: '1',
+      title: 'W',
+      short: 'Torus with a disk removed',
+      desc: 'Torus with a disk removed, one marked point on the boundary. Every quiver mutation equivalent to W is isomorphic to W and has no sink or source.',
+      labels: [1, 2, 3, 4],
+      pos: [[-1.2, 0], [1.8, 0], [0, 2.8], [0.2, 0.933]],
+      B: [[0, 2, -1, -1], [-2, 0, 1, 1], [1, -1, 0, 1], [1, -1, -1, 0]],
+    },
+    {
+      id: 'punctured-torus',
+      num: '∞',
+      title: 'Punctured torus',
+      short: 'The Markov quiver',
+      desc: 'Once-punctured torus: the Markov quiver. Take as long as you like.',
+      labels: [1, 2, 3],
+      pos: [[0, 0], [2, 0], [1, 1.732]],
+      B: [[0, 2, -2], [-2, 0, 2], [2, -2, 0]],
+    },
+  ];
+
+  // ---------- 状态 ----------
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const R = 16; // 顶点半径
+  let level = LEVELS[0];
+  let state;          // { B, nodes:[{label,x,y,aux}], history:[], mode, newIdx, nextLabel }
+  let undoStack = [];
+  let arrowSrc = null; // 加箭头时已选的起点下标
+  let message = '';
+
+  function clone(s) { return JSON.parse(JSON.stringify(s)); }
+
+  function layout(pos, w = cv.clientWidth, h = cv.clientHeight, pad = 60) {
+    const xs = pos.map(p => p[0]), ys = pos.map(p => p[1]);
+    const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+    const s = Math.min((w - 2 * pad) / (maxX - minX || 1), (h - 2 * pad) / (maxY - minY || 1));
+    const ox = (w - s * (maxX - minX)) / 2, oy = (h - s * (maxY - minY)) / 2;
+    return pos.map(p => ({ x: ox + s * (p[0] - minX), y: h - (oy + s * (p[1] - minY)) }));
+  }
+
+  function loadLevel(lv) {
+    level = lv;
+    const pts = layout(lv.pos);
+    state = {
+      B: clone(lv.B),
+      nodes: lv.labels.map((l, i) => ({ label: l, x: pts[i].x, y: pts[i].y, aux: false })),
+      history: [],
+      mode: 'mutate',
+      newIdx: null,
+      nextLabel: Math.max(...lv.labels) + 1,
+    };
+    undoStack = [];
+    arrowSrc = null;
+    message = '';
+    document.getElementById('levelTitle').textContent = `Level ${lv.num}: ${lv.title}`;
+    document.getElementById('levelDesc').textContent = lv.desc;
+    render();
+  }
+
+  function pushUndo() { undoStack.push(clone(state)); }
+
+  // ---------- 操作 ----------
+  function describeNewNode() {
+    const k = state.newIdx, B = state.B, lab = i => state.nodes[i].label;
+    const parts = [];
+    for (let i = 0; i < B.length; i++) {
+      if (i === k || B[i][k] === 0) continue;
+      const m = Math.abs(B[i][k]);
+      const s = B[i][k] > 0 ? `${lab(i)}→${lab(k)}` : `${lab(k)}→${lab(i)}`;
+      parts.push(m > 1 ? `${s}×${m}` : s);
+    }
+    return `+${lab(k)}` + (parts.length ? `(${parts.join(', ')})` : '');
+  }
+
+  function clickNode(i) {
+    const lab = state.nodes[i].label;
+    switch (state.mode) {
+      case 'mutate':
+        pushUndo();
+        state.B = Q.mutate(state.B, i);
+        state.history.push(`μ${lab}`);
+        message = `Mutated at ${lab}.`;
+        break;
+      case 'peel': {
+        const sink = Q.isSink(state.B, i), source = Q.isSource(state.B, i);
+        if (!sink && !source) { message = `${lab} is neither a sink nor a source.`; break; }
+        pushUndo();
+        state.B = Q.deleteVertex(state.B, i);
+        state.nodes.splice(i, 1);
+        state.history.push(`peel ${lab}`);
+        message = `Peeled ${lab} (${sink && source ? 'isolated' : sink ? 'sink' : 'source'}).`;
+        break;
+      }
+      case 'addNode':
+        message = 'First click an empty spot to place the new vertex.';
+        break;
+      case 'addArrows': {
+        const k = state.newIdx;
+        if (arrowSrc === null) { arrowSrc = i; message = `Source ${lab}; now click the target.`; break; }
+        if (i === arrowSrc) { arrowSrc = null; message = 'Source cleared.'; break; }
+        if (arrowSrc !== k && i !== k) {
+          message = `Arrows must touch the new vertex ${state.nodes[k].label}.`;
+          arrowSrc = null;
+          break;
+        }
+        pushUndo();
+        state.B = Q.addArrow(state.B, arrowSrc, i);
+        state.history[state.history.length - 1] = describeNewNode();
+        message = `Added ${state.nodes[arrowSrc].label}→${lab}. Add more arrows, or press "Done".`;
+        arrowSrc = null;
+        break;
+      }
+    }
+    render();
+  }
+
+  function clickEmpty(x, y) {
+    if (state.mode !== 'addNode') return;
+    pushUndo();
+    const label = state.nextLabel++;
+    state.B = Q.addVertex(state.B);
+    state.nodes.push({ label, x, y, aux: true });
+    state.newIdx = state.nodes.length - 1;
+    state.history.push(`+${label}`);
+    state.mode = 'addArrows';
+    arrowSrc = null;
+    message = `Placed vertex ${label}. Click a source, then a target, to add an arrow (one end must be ${label}). Press "Done" when finished.`;
+    render();
+  }
+
+  function setMode(m) {
+    arrowSrc = null;
+    if (state.mode === 'addArrows' || state.mode === 'addNode') {
+      state.newIdx = null;
+    }
+    state.mode = m;
+    message = {
+      mutate: 'Click a vertex to mutate; drag to move it.',
+      peel: 'Click a coloured vertex (sink/source) to peel it.',
+      addNode: 'Click an empty spot on the canvas to place a new vertex.',
+    }[m] || '';
+    render();
+  }
+
+  // ---------- 绘制 ----------
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(cv.clientWidth * dpr);
+    cv.height = Math.round(cv.clientHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function nodeColor(i) {
+    const sink = Q.isSink(state.B, i), source = Q.isSource(state.B, i);
+    if (sink && source) return getVar('--both');
+    if (sink) return getVar('--sink');
+    if (source) return getVar('--source');
+    return getVar('--node');
+  }
+  function getVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+  function drawArrow(c, a, b, mult, r = R) {
+    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+    const ux = dx / d, uy = dy / d;
+    const sx = a.x + ux * r, sy = a.y + uy * r, ex = b.x - ux * (r + 2), ey = b.y - uy * (r + 2);
+    c.strokeStyle = '#1d1d1b'; c.fillStyle = '#1d1d1b'; c.lineWidth = 1.8;
+    c.beginPath(); c.moveTo(sx, sy); c.lineTo(ex, ey); c.stroke();
+    const hl = 11, hw = 5;
+    c.beginPath();
+    c.moveTo(ex, ey);
+    c.lineTo(ex - ux * hl - uy * hw, ey - uy * hl + ux * hw);
+    c.lineTo(ex - ux * hl + uy * hw, ey - uy * hl - ux * hw);
+    c.closePath(); c.fill();
+    if (mult > 1) {
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, t = String(mult);
+      c.font = '600 13px -apple-system, Arial, sans-serif';
+      const w = c.measureText(t).width + 8;
+      c.fillStyle = '#fff'; c.fillRect(mx - w / 2, my - 9, w, 18);
+      c.strokeStyle = '#d9d8d2'; c.lineWidth = 1; c.strokeRect(mx - w / 2, my - 9, w, 18);
+      c.fillStyle = '#1d1d1b'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(t, mx, my + 0.5);
+    }
+  }
+
+  function render() {
+    const w = cv.clientWidth, h = cv.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+    const { B, nodes } = state;
+    for (let i = 0; i < B.length; i++) {
+      for (let j = i + 1; j < B.length; j++) {
+        if (B[i][j] > 0) drawArrow(ctx, nodes[i], nodes[j], B[i][j]);
+        else if (B[i][j] < 0) drawArrow(ctx, nodes[j], nodes[i], -B[i][j]);
+      }
+    }
+    nodes.forEach((n, i) => {
+      ctx.beginPath(); ctx.arc(n.x, n.y, R, 0, 2 * Math.PI);
+      ctx.fillStyle = nodeColor(i); ctx.fill();
+      const highlighted = (state.mode === 'addArrows' && (i === state.newIdx || i === arrowSrc));
+      ctx.lineWidth = highlighted ? 3.5 : 2;
+      ctx.strokeStyle = n.aux ? getVar('--aux') : '#1d1d1b';
+      ctx.setLineDash(n.aux ? [4, 3] : []);
+      ctx.stroke(); ctx.setLineDash([]);
+      if (i === arrowSrc) {
+        ctx.beginPath(); ctx.arc(n.x, n.y, R + 5, 0, 2 * Math.PI);
+        ctx.strokeStyle = getVar('--aux'); ctx.lineWidth = 2; ctx.stroke();
+      }
+      const filled = nodeColor(i) !== getVar('--node');
+      ctx.fillStyle = filled ? '#fff' : '#1d1d1b';
+      ctx.font = '600 14px -apple-system, Arial, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(n.label), n.x, n.y + 0.5);
+    });
+    if (nodes.length === 0) {
+      ctx.fillStyle = getVar('--both'); ctx.font = '600 28px -apple-system, Arial, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('Peeled!', w / 2, h / 2);
+    }
+
+    // 工具栏 / 状态 / 历史
+    const mode = state.mode === 'addArrows' ? 'addNode' : state.mode;
+    document.getElementById('btnMutate').classList.toggle('active', mode === 'mutate');
+    document.getElementById('btnPeel').classList.toggle('active', mode === 'peel');
+    document.getElementById('btnAddNode').classList.toggle('active', mode === 'addNode');
+    document.getElementById('btnUndo').disabled = undoStack.length === 0;
+    const st = document.getElementById('status');
+    if (nodes.length === 0) {
+      const nm = state.history.filter(s => s.startsWith('μ')).length;
+      const na = state.history.filter(s => s.startsWith('+')).length;
+      st.textContent = `Peeled! ${nm} mutation${nm === 1 ? '' : 's'}, ${na} node${na === 1 ? '' : 's'} added.`;
+      st.className = 'win';
+      markSolved(level.id);
+    } else {
+      st.textContent = message;
+      st.className = '';
+    }
+    document.getElementById('history').textContent =
+      state.history.length ? 'Moves: ' + state.history.join('  ') : '';
+  }
+
+  // ---------- 鼠标/触摸 ----------
+  let drag = null; // { idx, sx, sy, moved }
+  function pt(e) { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  function hit(p) {
+    for (let i = state.nodes.length - 1; i >= 0; i--) {
+      const n = state.nodes[i];
+      if (Math.hypot(n.x - p.x, n.y - p.y) <= R + 4) return i;
+    }
+    return -1;
+  }
+  cv.addEventListener('pointerdown', e => {
+    const p = pt(e), i = hit(p);
+    drag = { idx: i, sx: p.x, sy: p.y, moved: false };
+    cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!drag || drag.idx < 0) return;
+    const p = pt(e);
+    if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > 5) drag.moved = true;
+    if (drag.moved) {
+      const n = state.nodes[drag.idx];
+      n.x = Math.max(R, Math.min(cv.clientWidth - R, p.x));
+      n.y = Math.max(R, Math.min(cv.clientHeight - R, p.y));
+      render();
+    }
+  });
+  cv.addEventListener('pointerup', e => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (d.moved) return;
+    if (d.idx >= 0) clickNode(d.idx); else clickEmpty(d.sx, d.sy);
+  });
+
+  // ---------- 按钮 ----------
+  document.getElementById('btnMutate').onclick = () => setMode('mutate');
+  document.getElementById('btnPeel').onclick = () => setMode('peel');
+  document.getElementById('btnAddNode').onclick = () => setMode('addNode');
+  document.getElementById('btnDone').onclick = () => setMode('mutate');
+  document.getElementById('btnUndo').onclick = undo;
+  document.getElementById('btnReset').onclick = () => loadLevel(level);
+  function undo() {
+    if (!undoStack.length) return;
+    // 撤销只回退 quiver 和模式，保留玩家拖好的顶点位置
+    const pos = new Map(state.nodes.map(n => [n.label, { x: n.x, y: n.y }]));
+    state = undoStack.pop();
+    state.nodes.forEach(n => { const p = pos.get(n.label); if (p) { n.x = p.x; n.y = p.y; } });
+    arrowSrc = null;
+    message = 'Undid one step.';
+    render();
+  }
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+  });
+
+  // ---------- 关卡界面 ----------
+  // 每个浏览器自己记住过了哪些关；存储不可用时（隐私模式等）照常能玩，只是不显示 ✓
+  function solvedSet() {
+    try { return new Set(JSON.parse(localStorage.getItem('peel-a-quiver-solved') || '[]')); }
+    catch (e) { return new Set(); }
+  }
+  function markSolved(id) {
+    try { const s = solvedSet(); s.add(id); localStorage.setItem('peel-a-quiver-solved', JSON.stringify([...s])); }
+    catch (e) { /* ignore */ }
+  }
+
+  function drawThumb(canvas, lv) {
+    const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    const c = canvas.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const r = 9, pts = layout(lv.pos, w, h, 22);
+    for (let i = 0; i < lv.B.length; i++) for (let j = i + 1; j < lv.B.length; j++) {
+      if (lv.B[i][j] > 0) drawArrow(c, pts[i], pts[j], lv.B[i][j], r);
+      else if (lv.B[i][j] < 0) drawArrow(c, pts[j], pts[i], -lv.B[i][j], r);
+    }
+    pts.forEach(p => {
+      c.beginPath(); c.arc(p.x, p.y, r, 0, 2 * Math.PI);
+      c.fillStyle = '#fff'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = '#1d1d1b'; c.stroke();
+    });
+  }
+
+  function showMenu() {
+    document.getElementById('menuView').hidden = false;
+    document.getElementById('gameView').hidden = true;
+    const list = document.getElementById('levelList'), solved = solvedSet();
+    list.innerHTML = '';
+    LEVELS.forEach((lv, i) => {
+      const card = document.createElement('button');
+      card.className = 'card';
+      card.innerHTML = '<canvas></canvas><div class="meta"><div class="num"></div><div class="name"></div></div>';
+      card.querySelector('.num').textContent = `Level ${lv.num}`;
+      card.querySelector('.name').textContent = lv.title + ' — ' + lv.short;
+      if (solved.has(lv.id)) {
+        const b = document.createElement('span'); b.className = 'solved'; b.textContent = '✓ solved';
+        card.querySelector('.num').appendChild(b);
+      }
+      card.onclick = () => { location.hash = '#' + lv.id; };
+      list.appendChild(card);
+      drawThumb(card.querySelector('canvas'), lv);
+    });
+  }
+
+  function showGame(i) {
+    document.getElementById('menuView').hidden = true;
+    document.getElementById('gameView').hidden = false;
+    resizeCanvas();
+    loadLevel(LEVELS[i]);
+  }
+
+  function route() {
+    const i = LEVELS.findIndex(lv => '#' + lv.id === location.hash);
+    if (i >= 0) showGame(i); else showMenu();
+  }
+  document.getElementById('btnBack').onclick = () => { location.hash = ''; };
+  window.addEventListener('hashchange', route);
+  window.addEventListener('resize', () => {
+    if (document.getElementById('gameView').hidden) showMenu(); else { resizeCanvas(); render(); }
+  });
+  route();
+})();
+</script>
+</body>
+</html>
