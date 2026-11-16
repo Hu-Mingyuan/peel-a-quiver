@@ -102,4 +102,17 @@ function play(B, moves) {
 const sol2 = 'mu 1,mu 2,mu 4,mu 3,peel 7,peel 3,mu 4,mu 5,mu 2,mu 1,peel 4,peel 5,peel 1,mu 6,peel 2,peel 8,peel 6,peel 9'.split(',');
 assert.strictEqual(play(B2, sol2).length, 0);
 
+// 9. Level 3（亏格 2，一个 marked point）：加顶点 11（4→11→10）后按这条解能剥完
+const B3 = [[0, 0, 1, 0, -2, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, -1, 1, -1, 1], [-1, 0, 0, 0, 1, -1, 1, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, -1, 1, -1], [2, 0, -1, 0, 0, -1, 0, 0, 0, 0], [-1, 0, 1, 0, 1, 0, -1, 0, 0, 0],
+  [0, 1, -1, 0, 0, 1, 0, -1, 0, 0], [0, -1, 0, 1, 0, 0, 1, 0, -1, 0], [0, 1, 0, -1, 0, 0, 0, 1, 0, -1],
+  [0, -1, 0, 1, 0, 0, 0, 0, 1, 0]];
+assert.ok(B3.every((_, i) => !Q.isSink(B3, i) && !Q.isSource(B3, i)));
+let B3e = Q.addVertex(B3);
+B3e = Q.addArrow(B3e, 3, 10); // 4 -> 11
+B3e = Q.addArrow(B3e, 10, 9); // 11 -> 10
+const sol3 = ('mu 11,mu 4,mu 9,mu 10,peel 4,mu 2,mu 8,mu 10,peel 11,peel 8,peel 10,mu 2,peel 9,peel 2,' +
+  'mu 7,mu 3,mu 1,mu 5,peel 7,mu 5,mu 6,peel 1,peel 3,peel 5,peel 6').split(',');
+assert.strictEqual(play(B3e, sol3).length, 0);
+
 console.log('all tests passed');

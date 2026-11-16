@@ -156,6 +156,19 @@
       B: [[0, 2, -1, -1], [-2, 0, 1, 1], [1, -1, 0, 1], [1, -1, -1, 0]],
     },
     {
+      // 亏格 2、一个边界、一个 marked point 的曲面三角剖分 quiver；由 tools/surface.py 生成。
+      // mutation 类有 105 个同构类，都没有 sink/source，所以必须加顶点。
+      id: 'level-3',
+      num: '3',
+      origin: 'A genus-2 surface with a disk removed, with one marked point on the boundary: the quiver of an ideal triangulation of this surface.',
+      labels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      pos: [[-1.92, -0.546], [0.821, 0.612], [-1.248, 0.451], [1.754, -0.799], [-1.919, 0.55], [-1.248, -0.453], [-0.221, -0.002], [0.821, -0.616], [1.408, 0.002], [1.752, 0.801]],
+      B: [[0, 0, 1, 0, -2, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, -1, 1, -1, 1], [-1, 0, 0, 0, 1, -1, 1, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, -1, 1, -1], [2, 0, -1, 0, 0, -1, 0, 0, 0, 0], [-1, 0, 1, 0, 1, 0, -1, 0, 0, 0],
+          [0, 1, -1, 0, 0, 1, 0, -1, 0, 0], [0, -1, 0, 1, 0, 0, 1, 0, -1, 0], [0, 1, 0, -1, 0, 0, 0, 1, 0, -1],
+          [0, -1, 0, 1, 0, 0, 0, 0, 1, 0]],
+    },
+    {
       id: 'level-inf',
       num: '∞',
       origin: 'A once-punctured torus: the quiver of an ideal triangulation, known as the Markov quiver.',
