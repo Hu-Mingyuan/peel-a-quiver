@@ -71,4 +71,16 @@ while (queue.length) {
 }
 assert.strictEqual(seen.size, 2);
 
+// 7. Level 0（定向三角形）：在任意顶点 mutate 一次后就是 acyclic，可以剥完
+const B0 = [[0, 1, -1], [-1, 0, 1], [1, -1, 0]];
+assert.ok(B0.every((_, i) => !Q.isSink(B0, i) && !Q.isSource(B0, i)));
+for (let k = 0; k < 3; k++) {
+  let M = Q.mutate(B0, k);
+  while (M.length) {
+    const s = M.findIndex((_, i) => Q.isSink(M, i) || Q.isSource(M, i));
+    assert.ok(s >= 0);
+    M = Q.deleteVertex(M, s);
+  }
+}
+
 console.log('all tests passed');

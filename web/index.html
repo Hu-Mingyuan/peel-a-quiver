@@ -44,6 +44,10 @@
   .card .name { font-weight: 600; }
   .card .solved { color: var(--both); font-size: 13px; font-weight: 600; margin-left: 6px; }
   .back { margin-bottom: 10px; }
+  .rules-link { margin: -8px 0 14px; }
+  .hint { background: #eef3fc; border: 1px solid #c9d8f3; border-radius: 6px; padding: 8px 12px; margin: 0 0 10px; min-height: 4.6em; }
+  .rules { max-width: 680px; }
+  .rules li { margin-bottom: 6px; }
   .credit { color: var(--muted); font-size: 13px; margin-top: 20px; }
   .credit a { color: inherit; }
 </style>
@@ -54,13 +58,31 @@
 
   <section id="menuView">
     <p class="intro">Peel each quiver down to the empty quiver using mutations, removing sinks and sources, and, if needed, adding auxiliary nodes.</p>
+    <p class="rules-link"><a href="#rules">Rules</a></p>
     <div class="levels" id="levelList"></div>
     <p class="credit">Based on Bernhard Keller's <a href="https://webusers.imj-prg.fr/~bernhard.keller/quivermutation/" target="_blank" rel="noopener">quiver mutation applet</a>.</p>
+  </section>
+
+  <section id="rulesView" hidden>
+    <button class="back" id="btnRulesBack">← Levels</button>
+    <h2>Rules</h2>
+    <div class="rules">
+      <p><b>Goal.</b> Peel the quiver down to the empty quiver.</p>
+      <p><b>Moves.</b></p>
+      <ul>
+        <li><b>Mutate</b>: click a vertex <i>k</i> to mutate there. For each path i→k→j add an arrow i→j, reverse all arrows at <i>k</i>, then cancel 2-cycles.</li>
+        <li><b>Peel sink/source</b>: click a sink or a source to delete it. A vertex is a <i>sink</i> if every arrow at it points in, and a <i>source</i> if every arrow at it points out; an isolated vertex is both. Sinks are blue, sources orange, isolated vertices green.</li>
+        <li><b>Add node</b>: click an empty spot to place a new vertex (dashed). Then, as in Keller's applet, click a source and then a target to add one arrow; adding an arrow in the opposite direction cancels one. Every arrow must touch the new vertex. Press <b>Done</b> when finished. Arrows between existing vertices cannot be changed.</li>
+      </ul>
+      <p><b>Controls.</b> Drag a vertex to move it. <b>Undo</b> (also Ctrl/⌘+Z) takes back one step, <b>Restart</b> resets the level, <b>← Levels</b> returns to the level list. Several parallel arrows are drawn as one arrow labelled with their number.</p>
+      <p><b>When is a level solvable?</b> Exactly when its quiver is <i>sub-peelable</i>, i.e. a full subquiver of a quiver that can be peeled using mutations and sink/source removals alone (a <i>peelable</i> quiver). Without adding nodes, a level is solvable exactly when its quiver is peelable.</p>
+    </div>
   </section>
 
   <section id="gameView" hidden>
   <button class="back" id="btnBack">← Levels</button>
   <h2 id="levelTitle"></h2>
+  <div id="hint" class="hint" hidden></div>
 
   <div class="toolbar">
     <button id="btnMutate" class="active">Mutate</button>
@@ -83,16 +105,7 @@
   </div>
   <div id="history"></div>
 
-  <details>
-    <summary>Rules</summary>
-    <p>Goal: peel the quiver down to the empty quiver.</p>
-    <ul>
-      <li><b>Mutate</b>: click a vertex to mutate there. For each path i→k→j add an arrow i→j, reverse all arrows at k, then cancel 2-cycles. Dragging a vertex only moves it.</li>
-      <li><b>Peel sink/source</b>: click a coloured vertex (a sink or a source) to delete it.</li>
-      <li><b>Add node</b>: click an empty spot to place a new vertex, then, as in Keller's applet, click a source and then a target to add one arrow; adding an arrow in the opposite direction cancels one. Every arrow must touch the new vertex. Press "Done" when finished.</li>
-    </ul>
-    <p>The quiver can be peeled ⇔ it is sub-peelable. It can be peeled without adding nodes ⇔ it is peelable.</p>
-  </details>
+  <p class="credit"><a href="#rules">Rules</a></p>
   </section>
 </main>
 
@@ -106,17 +119,24 @@
   // pos 的 y 轴向上，载入时缩放到画布。
   const LEVELS = [
     {
-      id: 'W',
+      // 新手关：定向三角形，mutate 任意一个顶点后变成 acyclic
+      id: 'level-0',
+      num: '0',
+      tutorial: true,
+      labels: [1, 2, 3],
+      pos: [[0, 0], [2, 0], [1, 1.732]],
+      B: [[0, 1, -1], [-1, 0, 1], [1, -1, 0]],
+    },
+    {
+      id: 'level-1',
       num: '1',
-      title: 'W',
       labels: [1, 2, 3, 4],
       pos: [[-1.2, 0], [1.8, 0], [0, 2.8], [0.2, 0.933]],
       B: [[0, 2, -1, -1], [-2, 0, 1, 1], [1, -1, 0, 1], [1, -1, -1, 0]],
     },
     {
-      id: 'punctured-torus',
+      id: 'level-inf',
       num: '∞',
-      title: 'Punctured torus',
       labels: [1, 2, 3],
       pos: [[0, 0], [2, 0], [1, 1.732]],
       B: [[0, 2, -2], [-2, 0, 2], [2, -2, 0]],
@@ -157,7 +177,7 @@
     undoStack = [];
     arrowSrc = null;
     message = '';
-    document.getElementById('levelTitle').textContent = `Level ${lv.num}: ${lv.title}`;
+    document.getElementById('levelTitle').textContent = `Level ${lv.num}`;
     render();
   }
 
@@ -337,8 +357,38 @@
       st.textContent = message;
       st.className = '';
     }
+    renderHint();
     document.getElementById('history').textContent =
       state.history.length ? 'Moves: ' + state.history.join('  ') : '';
+  }
+
+  // 新手关的分步提示，根据当前局面给出下一步该做什么
+  function renderHint() {
+    const el = document.getElementById('hint');
+    if (!level.tutorial) { el.hidden = true; return; }
+    el.hidden = false;
+    const { B, nodes } = state;
+    const lab = i => nodes[i].label;
+    const peelable = nodes.map((_, i) => i).filter(i => Q.isSink(B, i) || Q.isSource(B, i));
+    let t;
+    if (nodes.length === 0) {
+      t = 'Well done! Every level works the same way: mutate until a sink or source appears, peel it, repeat. ' +
+          'Harder levels may also need extra vertices; see "Add node" in the Rules.';
+    } else if (state.mode === 'addNode' || state.mode === 'addArrows') {
+      t = 'This level does not need extra vertices. Press "Done", then "Mutate".';
+    } else if (peelable.length === 0) {
+      t = state.history.length === 0
+        ? 'Goal: delete every vertex. You may only delete a sink (all arrows point in) or a source (all arrows point out), and here there are none. ' +
+          'Mutation changes that: in "Mutate" mode, click any vertex.'
+        : 'No sink or source right now. Press "Mutate" and click a vertex.';
+    } else if (state.mode === 'peel') {
+      t = 'Click a coloured vertex to peel it: blue is a sink, orange a source, green an isolated vertex.';
+    } else {
+      const i = peelable[0];
+      const kind = Q.isSink(B, i) && Q.isSource(B, i) ? 'an isolated vertex (green)' : Q.isSink(B, i) ? 'a sink (blue)' : 'a source (orange)';
+      t = `Vertex ${lab(i)} is now ${kind}. Press "Peel sink/source", then click it.`;
+    }
+    el.textContent = t;
   }
 
   // ---------- 鼠标/触摸 ----------
@@ -421,20 +471,23 @@
     });
   }
 
+  function showView(id) {
+    for (const v of ['menuView', 'rulesView', 'gameView']) document.getElementById(v).hidden = v !== id;
+    window.scrollTo(0, 0);
+  }
+
   function showMenu() {
-    document.getElementById('menuView').hidden = false;
-    document.getElementById('gameView').hidden = true;
+    showView('menuView');
     const list = document.getElementById('levelList'), solved = solvedSet();
     list.innerHTML = '';
     LEVELS.forEach((lv, i) => {
       const card = document.createElement('button');
       card.className = 'card';
-      card.innerHTML = '<canvas></canvas><div class="meta"><div class="num"></div><div class="name"></div></div>';
-      card.querySelector('.num').textContent = `Level ${lv.num}`;
-      card.querySelector('.name').textContent = lv.title;
+      card.innerHTML = '<canvas></canvas><div class="meta"><span class="name"></span></div>';
+      card.querySelector('.name').textContent = `Level ${lv.num}`;
       if (solved.has(lv.id)) {
         const b = document.createElement('span'); b.className = 'solved'; b.textContent = '✓ solved';
-        card.querySelector('.num').appendChild(b);
+        card.querySelector('.meta').appendChild(b);
       }
       card.onclick = () => { location.hash = '#' + lv.id; };
       list.appendChild(card);
@@ -443,20 +496,23 @@
   }
 
   function showGame(i) {
-    document.getElementById('menuView').hidden = true;
-    document.getElementById('gameView').hidden = false;
+    showView('gameView');
     resizeCanvas();
     loadLevel(LEVELS[i]);
   }
 
   function route() {
     const i = LEVELS.findIndex(lv => '#' + lv.id === location.hash);
-    if (i >= 0) showGame(i); else showMenu();
+    if (i >= 0) showGame(i);
+    else if (location.hash === '#rules') showView('rulesView');
+    else showMenu();
   }
   document.getElementById('btnBack').onclick = () => { location.hash = ''; };
+  document.getElementById('btnRulesBack').onclick = () => { location.hash = ''; };
   window.addEventListener('hashchange', route);
   window.addEventListener('resize', () => {
-    if (document.getElementById('gameView').hidden) showMenu(); else { resizeCanvas(); render(); }
+    if (!document.getElementById('gameView').hidden) { resizeCanvas(); render(); }
+    else if (!document.getElementById('menuView').hidden) showMenu();
   });
   route();
 })();
