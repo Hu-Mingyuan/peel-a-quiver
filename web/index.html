@@ -15,7 +15,7 @@
          font: 15px/1.5 -apple-system, "PingFang SC", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif; }
   main { max-width: 960px; margin: 0 auto; padding: 16px; }
   h1 { font-size: 22px; margin: 0 0 8px; }
-  h2 { font-size: 16px; margin: 0 0 2px; }
+  h2 { font-size: 16px; margin: 0 0 10px; }
   .sub { color: var(--muted); margin: 0 0 12px; }
   .toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
   .toolbar .sep { width: 12px; }
@@ -61,7 +61,6 @@
   <section id="gameView" hidden>
   <button class="back" id="btnBack">← Levels</button>
   <h2 id="levelTitle"></h2>
-  <p class="sub" id="levelDesc"></p>
 
   <div class="toolbar">
     <button id="btnMutate" class="active">Mutate</button>
@@ -110,8 +109,6 @@
       id: 'W',
       num: '1',
       title: 'W',
-      short: 'Torus with a disk removed',
-      desc: 'Torus with a disk removed, one marked point on the boundary. Every quiver mutation equivalent to W is isomorphic to W and has no sink or source.',
       labels: [1, 2, 3, 4],
       pos: [[-1.2, 0], [1.8, 0], [0, 2.8], [0.2, 0.933]],
       B: [[0, 2, -1, -1], [-2, 0, 1, 1], [1, -1, 0, 1], [1, -1, -1, 0]],
@@ -120,8 +117,6 @@
       id: 'punctured-torus',
       num: '∞',
       title: 'Punctured torus',
-      short: 'The Markov quiver',
-      desc: 'Once-punctured torus: the Markov quiver. Take as long as you like.',
       labels: [1, 2, 3],
       pos: [[0, 0], [2, 0], [1, 1.732]],
       B: [[0, 2, -2], [-2, 0, 2], [2, -2, 0]],
@@ -163,7 +158,6 @@
     arrowSrc = null;
     message = '';
     document.getElementById('levelTitle').textContent = `Level ${lv.num}: ${lv.title}`;
-    document.getElementById('levelDesc').textContent = lv.desc;
     render();
   }
 
@@ -437,7 +431,7 @@
       card.className = 'card';
       card.innerHTML = '<canvas></canvas><div class="meta"><div class="num"></div><div class="name"></div></div>';
       card.querySelector('.num').textContent = `Level ${lv.num}`;
-      card.querySelector('.name').textContent = lv.title + ' — ' + lv.short;
+      card.querySelector('.name').textContent = lv.title;
       if (solved.has(lv.id)) {
         const b = document.createElement('span'); b.className = 'solved'; b.textContent = '✓ solved';
         card.querySelector('.num').appendChild(b);
