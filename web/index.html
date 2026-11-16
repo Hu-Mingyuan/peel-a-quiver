@@ -32,6 +32,7 @@
   #history { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; color: var(--muted);
              word-break: break-word; }
   details { margin-top: 12px; color: var(--muted); }
+  summary { cursor: pointer; }
   [hidden] { display: none !important; }
   .intro { color: var(--muted); margin: 0 0 16px; max-width: 640px; }
   .levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
@@ -105,7 +106,14 @@
   </div>
   <div id="history"></div>
 
-  <p class="credit"><a href="#rules">Rules</a></p>
+  <details id="rulesDetails">
+    <summary>Rules</summary>
+    <div class="rules" id="rulesInGame"></div>
+  </details>
+  <details id="originDetails">
+    <summary>Where this quiver comes from</summary>
+    <p id="originText"></p>
+  </details>
   </section>
 </main>
 
@@ -123,6 +131,7 @@
       id: 'level-0',
       num: '0',
       tutorial: true,
+      origin: 'An oriented 3-cycle. It comes from a triangulation of a hexagon in which three diagonals form a triangle, and it is mutation equivalent to the A₃ quiver 1→2→3.',
       labels: [1, 2, 3],
       pos: [[0, 0], [2, 0], [1, 1.732]],
       B: [[0, 1, -1], [-1, 0, 1], [1, -1, 0]],
@@ -130,6 +139,7 @@
     {
       id: 'level-1',
       num: '1',
+      origin: 'A torus with a disk removed, with one marked point on the boundary: the quiver of an ideal triangulation of this surface.',
       labels: [1, 2, 3, 4],
       pos: [[-1.2, 0], [1.8, 0], [0, 2.8], [0.2, 0.933]],
       B: [[0, 2, -1, -1], [-2, 0, 1, 1], [1, -1, 0, 1], [1, -1, -1, 0]],
@@ -137,6 +147,7 @@
     {
       id: 'level-inf',
       num: '∞',
+      origin: 'A once-punctured torus: the quiver of an ideal triangulation, known as the Markov quiver.',
       labels: [1, 2, 3],
       pos: [[0, 0], [2, 0], [1, 1.732]],
       B: [[0, 2, -2], [-2, 0, 2], [2, -2, 0]],
@@ -178,6 +189,10 @@
     arrowSrc = null;
     message = '';
     document.getElementById('levelTitle').textContent = `Level ${lv.num}`;
+    const od = document.getElementById('originDetails');
+    od.hidden = !lv.origin;
+    od.open = false;
+    document.getElementById('originText').textContent = lv.origin || '';
     render();
   }
 
@@ -509,6 +524,8 @@
   }
   document.getElementById('btnBack').onclick = () => { location.hash = ''; };
   document.getElementById('btnRulesBack').onclick = () => { location.hash = ''; };
+  // 关卡里的 Rules 折叠块和规则页用同一份内容
+  document.getElementById('rulesInGame').innerHTML = document.querySelector('#rulesView .rules').innerHTML;
   window.addEventListener('hashchange', route);
   window.addEventListener('resize', () => {
     if (!document.getElementById('gameView').hidden) { resizeCanvas(); render(); }
