@@ -349,12 +349,6 @@
     const w = cv.clientWidth, h = cv.clientHeight;
     ctx.clearRect(0, 0, w, h);
     const { B, nodes } = state;
-    for (let i = 0; i < B.length; i++) {
-      for (let j = i + 1; j < B.length; j++) {
-        if (B[i][j] > 0) drawArrow(ctx, nodes[i], nodes[j], B[i][j]);
-        else if (B[i][j] < 0) drawArrow(ctx, nodes[j], nodes[i], -B[i][j]);
-      }
-    }
     nodes.forEach((n, i) => {
       ctx.beginPath(); ctx.arc(n.x, n.y, R, 0, 2 * Math.PI);
       ctx.fillStyle = nodeColor(i); ctx.fill();
@@ -373,6 +367,13 @@
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(String(n.label), n.x, n.y + 0.5);
     });
+    // 箭头画在顶点之上
+    for (let i = 0; i < B.length; i++) {
+      for (let j = i + 1; j < B.length; j++) {
+        if (B[i][j] > 0) drawArrow(ctx, nodes[i], nodes[j], B[i][j]);
+        else if (B[i][j] < 0) drawArrow(ctx, nodes[j], nodes[i], -B[i][j]);
+      }
+    }
     if (nodes.length === 0) {
       ctx.fillStyle = getVar('--both'); ctx.font = '600 28px -apple-system, Arial, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -500,14 +501,14 @@
     canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
     const c = canvas.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
     const r = 9, pts = layout(lv.pos, w, h, 22);
-    for (let i = 0; i < lv.B.length; i++) for (let j = i + 1; j < lv.B.length; j++) {
-      if (lv.B[i][j] > 0) drawArrow(c, pts[i], pts[j], lv.B[i][j], r);
-      else if (lv.B[i][j] < 0) drawArrow(c, pts[j], pts[i], -lv.B[i][j], r);
-    }
     pts.forEach(p => {
       c.beginPath(); c.arc(p.x, p.y, r, 0, 2 * Math.PI);
       c.fillStyle = '#fff'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = '#1d1d1b'; c.stroke();
     });
+    for (let i = 0; i < lv.B.length; i++) for (let j = i + 1; j < lv.B.length; j++) {
+      if (lv.B[i][j] > 0) drawArrow(c, pts[i], pts[j], lv.B[i][j], r);
+      else if (lv.B[i][j] < 0) drawArrow(c, pts[j], pts[i], -lv.B[i][j], r);
+    }
   }
 
   function showView(id) {
