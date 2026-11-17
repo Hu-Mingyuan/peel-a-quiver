@@ -52,6 +52,9 @@
   .credit { color: var(--muted); font-size: 13px; margin-top: 20px; }
   .card.create { border-style: dashed; }
   button.primary { background: var(--both); color: #fff; border-color: var(--both); }
+  .share { display: flex; gap: 8px; align-items: center; margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+  .share input { flex: 1; min-width: 0; font: 13px ui-monospace, Menlo, Consolas, monospace; padding: 5px 8px;
+                 border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--fg); }
   .credit a { color: inherit; }
 </style>
 </head>
@@ -78,7 +81,7 @@
         <li><b>Add node</b>: click an empty spot to place a new vertex (dashed). Then, as in Keller's applet, click a source and then a target to add one arrow; adding an arrow in the opposite direction cancels one. Every arrow must touch the new vertex. Press <b>Done</b> when finished. Arrows between existing vertices cannot be changed.</li>
       </ul>
       <p><b>Controls.</b> Drag a vertex to move it. <b>Undo</b> (also Ctrl/⌘+Z) takes back one step, <b>Restart</b> resets the level, <b>← Levels</b> returns to the level list. Several parallel arrows are drawn as one arrow labelled with their number.</p>
-      <p><b>Create your own.</b> The last card on the level list opens an editor. Click an empty spot to add a vertex, use <b>Add arrow</b> to connect vertices (click a source, then a target; an arrow in the opposite direction cancels one), and <b>Delete vertex</b> to remove one. Press <b>Start peeling</b> to play your quiver with the same rules, and <b>Edit quiver</b> to go back to the editor.</p>
+      <p><b>Create your own.</b> The last card on the level list opens an editor. Click an empty spot to add a vertex, use <b>Add arrow</b> to connect vertices (click a source, then a target; an arrow in the opposite direction cancels one), and <b>Delete vertex</b> to remove one. Press <b>Start peeling</b> to play your quiver with the same rules, and <b>Edit quiver</b> to go back to the editor. <b>Share link</b> gives a link that opens your quiver for anyone.</p>
       <p><b>When is a level solvable?</b> Exactly when its quiver is <i>sub-peelable</i>, i.e. a full subquiver of a quiver that can be peeled using mutations and sink/source removals alone (a <i>peelable</i> quiver). Without adding nodes, a level is solvable exactly when its quiver is peelable.</p>
     </div>
   </section>
@@ -97,6 +100,7 @@
     <button id="btnEClear">Clear</button>
     <span class="sep"></span>
     <button id="btnEStart" class="primary">Start peeling</button>
+    <button id="btnEShare">Share link</button>
   </div>
   <div class="toolbar" id="playToolbar">
     <button id="btnMutate" class="active">Mutate</button>
@@ -107,7 +111,9 @@
     <button id="btnUndo">Undo</button>
     <button id="btnReset">Restart</button>
     <button id="btnEdit" hidden>Edit quiver</button>
+    <button id="btnShare" hidden>Share link</button>
   </div>
+  <div class="share" id="shareBox" hidden><input id="shareUrl" readonly><span id="shareNote"></span></div>
   <div id="status"></div>
 
   <div class="canvas-wrap"><canvas id="cv"></canvas></div>
@@ -246,7 +252,10 @@
     render();
   }
 
-  function pushUndo() { undoStack.push(clone(state)); }
+  function pushUndo() {
+    undoStack.push(clone(state));
+    if (level.editing) document.getElementById('shareBox').hidden = true;   // 改了 quiver，旧链接作废
+  }
 
   // ---------- 自己造 quiver ----------
   // 编辑时 level.editing 为真；按 Start 后生成一个 custom 关卡，按普通规则玩。
@@ -255,6 +264,8 @@
     document.getElementById('editToolbar').hidden = !level.editing;
     document.getElementById('playToolbar').hidden = !!level.editing;
     document.getElementById('btnEdit').hidden = !level.custom;
+    document.getElementById('btnShare').hidden = !level.custom;
+    document.getElementById('shareBox').hidden = true;
     document.querySelector('.legend').hidden = !!level.editing;
   }
   function savedCustom() {
@@ -262,6 +273,7 @@
     catch (e) { return null; }
   }
   function startEditor(from) {
+    document.getElementById('shareBox').hidden = true;
     level = { id: 'create', title: 'Create your own quiver', editing: true };
     const pts = from ? layout(from.pos) : [];
     state = {
@@ -280,6 +292,46 @@
     showToolbars();
     render();
   }
+  // 分享链接：#q=n|上三角的 B 元素|坐标（y 轴向上，缩放到 0..1000 的整数）
+  function encodeQuiver(B, pos) {
+    const n = B.length, up = [];
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) up.push(B[i][j]);
+    const xs = pos.map(p => p[0]), ys = pos.map(p => p[1]);
+    const mx = Math.min(...xs), my = Math.min(...ys);
+    const sc = 1000 / (Math.max(Math.max(...xs) - mx, Math.max(...ys) - my) || 1);
+    const ps = pos.flatMap(p => [Math.round((p[0] - mx) * sc), Math.round((p[1] - my) * sc)]);
+    return `${n}|${up.join(',')}|${ps.join(',')}`;
+  }
+  function decodeQuiver(code) {
+    const parts = code.split('|');
+    const n = parseInt(parts[0], 10);
+    if (!(n >= 1 && n <= 60) || parts.length !== 3) return null;
+    const up = parts[1] === '' ? [] : parts[1].split(',').map(Number);
+    const ps = parts[2].split(',').map(Number);
+    if (up.length !== n * (n - 1) / 2 || ps.length !== 2 * n) return null;
+    if (!up.every(v => Number.isInteger(v) && Math.abs(v) <= 99) || !ps.every(Number.isFinite)) return null;
+    const B = Array.from({ length: n }, () => new Array(n).fill(0));
+    let t = 0;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { B[i][j] = up[t]; B[j][i] = 0 - up[t]; t++; }
+    const labels = B.map((_, i) => i + 1);
+    return { id: 'custom', title: 'Shared quiver', custom: true, labels, pos: labels.map((_, i) => [ps[2 * i], ps[2 * i + 1]]), B };
+  }
+  function share() {
+    let B, pos;
+    if (level.editing) {
+      if (!state.nodes.length) { message = 'Add at least one vertex first.'; render(); return; }
+      B = state.B; pos = state.nodes.map(n => [n.x, -n.y]);
+    } else { B = level.B; pos = level.pos; }
+    const url = location.href.split('#')[0] + '#q=' + encodeQuiver(B, pos);
+    const box = document.getElementById('shareBox'), inp = document.getElementById('shareUrl');
+    const note = document.getElementById('shareNote');
+    box.hidden = false; inp.value = url; inp.focus(); inp.select();
+    note.textContent = 'Copy this link.';
+    try {
+      navigator.clipboard.writeText(url).then(() => { note.textContent = 'Link copied.'; }, () => {});
+    } catch (e) { /* 剪贴板不可用时手动复制 */ }
+  }
+
   function startCustom() {
     if (!state.nodes.length) { message = 'Add at least one vertex first.'; render(); return; }
     const custom = {
@@ -589,6 +641,8 @@
   };
   document.getElementById('btnEStart').onclick = startCustom;
   document.getElementById('btnEdit').onclick = () => startEditor(level);
+  document.getElementById('btnShare').onclick = share;
+  document.getElementById('btnEShare').onclick = share;
   function undo() {
     if (!undoStack.length) return;
     // 撤销只回退 quiver 和模式，保留玩家拖好的顶点位置
@@ -678,6 +732,10 @@
   function route() {
     const i = LEVELS.findIndex(lv => '#' + lv.id === location.hash);
     if (i >= 0) showGame(i);
+    else if (location.hash.startsWith('#q=')) {
+      const lv = decodeQuiver(decodeURIComponent(location.hash.slice(3)));
+      if (lv) { showView('gameView'); resizeCanvas(); loadLevel(lv); } else showMenu();
+    }
     else if (location.hash === '#create') { showView('gameView'); resizeCanvas(); startEditor(savedCustom()); }
     else if (location.hash === '#rules') showView('rulesView');
     else showMenu();
