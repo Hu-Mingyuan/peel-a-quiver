@@ -83,7 +83,7 @@ for (let k = 0; k < 3; k++) {
   }
 }
 
-// 8. Level 2（FG SL_4 四边形）：和 tools/fg.js 生成的一致，并且按求解器找到的解能剥完
+// 8. Level 1（FG SL_4 四边形）：和 tools/fg.js 生成的一致，并且按求解器找到的解能剥完
 const { fgQuad } = require('../tools/fg.js');
 const B2 = fgQuad(4).B;
 function play(B, moves) {
@@ -115,7 +115,7 @@ const sol3 = ('mu 11,mu 4,mu 9,mu 10,peel 4,mu 2,mu 8,mu 10,peel 11,peel 8,peel 
   'mu 7,mu 3,mu 1,mu 5,peel 7,mu 5,mu 6,peel 1,peel 3,peel 5,peel 6').split(',');
 assert.strictEqual(play(B3e, sol3).length, 0);
 
-// 10. Level 1（FG SL_3 annulus）：和 tools/fg_surface.py 一致（见注释），没有 sink/source，按这条 6 次 mutation 的解能剥完
+// 10. Level 2（FG SL_3 annulus）：和 tools/fg_surface.py 一致（见注释），没有 sink/source，按这条 6 次 mutation 的解能剥完
 const B1 = [[0, 1, -1, -1, 1, 0], [-1, 0, 1, 0, 0, 1], [1, -1, 0, 0, 0, -1],
   [1, 0, 0, 0, 1, -1], [-1, 0, 0, -1, 0, 1], [0, -1, 1, 1, -1, 0]];
 assert.ok(B1.every((_, i) => !Q.isSink(B1, i) && !Q.isSource(B1, i)));
