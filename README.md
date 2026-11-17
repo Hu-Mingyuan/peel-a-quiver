@@ -2,6 +2,7 @@
 
 A browser puzzle about peelable and sub-peelable quivers.
 Mutate, peel sinks and sources, and add auxiliary nodes until the quiver is empty.
+Peelable and sub-peelable quivers are defined in the paper [Ice and mirrors](https://arxiv.org/abs/2611.21484) (Mingyuan Hu and Vivek Shende, arXiv:2611.21484).
 Based on Bernhard Keller's [quiver mutation applet](https://webusers.imj-prg.fr/~bernhard.keller/quivermutation/).
 
 - `web/index.html`, `web/quiver.js` — the game (static files, no build step)
