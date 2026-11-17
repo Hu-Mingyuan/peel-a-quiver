@@ -50,6 +50,8 @@
   .rules { max-width: 680px; }
   .rules li { margin-bottom: 6px; }
   .credit { color: var(--muted); font-size: 13px; margin-top: 20px; }
+  .card.create { border-style: dashed; }
+  button.primary { background: var(--both); color: #fff; border-color: var(--both); }
   .credit a { color: inherit; }
 </style>
 </head>
@@ -76,6 +78,7 @@
         <li><b>Add node</b>: click an empty spot to place a new vertex (dashed). Then, as in Keller's applet, click a source and then a target to add one arrow; adding an arrow in the opposite direction cancels one. Every arrow must touch the new vertex. Press <b>Done</b> when finished. Arrows between existing vertices cannot be changed.</li>
       </ul>
       <p><b>Controls.</b> Drag a vertex to move it. <b>Undo</b> (also Ctrl/⌘+Z) takes back one step, <b>Restart</b> resets the level, <b>← Levels</b> returns to the level list. Several parallel arrows are drawn as one arrow labelled with their number.</p>
+      <p><b>Create your own.</b> The last card on the level list opens an editor. Click an empty spot to add a vertex, use <b>Add arrow</b> to connect vertices (click a source, then a target; an arrow in the opposite direction cancels one), and <b>Delete vertex</b> to remove one. Press <b>Start peeling</b> to play your quiver with the same rules, and <b>Edit quiver</b> to go back to the editor.</p>
       <p><b>When is a level solvable?</b> Exactly when its quiver is <i>sub-peelable</i>, i.e. a full subquiver of a quiver that can be peeled using mutations and sink/source removals alone (a <i>peelable</i> quiver). Without adding nodes, a level is solvable exactly when its quiver is peelable.</p>
     </div>
   </section>
@@ -85,7 +88,17 @@
   <h2 id="levelTitle"></h2>
   <div id="hint" class="hint" hidden></div>
 
-  <div class="toolbar">
+  <div class="toolbar" id="editToolbar" hidden>
+    <button id="btnEVertex" class="active">Add vertex</button>
+    <button id="btnEArrow">Add arrow</button>
+    <button id="btnEDelete">Delete vertex</button>
+    <span class="sep"></span>
+    <button id="btnEUndo">Undo</button>
+    <button id="btnEClear">Clear</button>
+    <span class="sep"></span>
+    <button id="btnEStart" class="primary">Start peeling</button>
+  </div>
+  <div class="toolbar" id="playToolbar">
     <button id="btnMutate" class="active">Mutate</button>
     <button id="btnPeel">Peel sink/source</button>
     <button id="btnAddNode">Add node</button>
@@ -93,6 +106,7 @@
     <span class="sep"></span>
     <button id="btnUndo">Undo</button>
     <button id="btnReset">Restart</button>
+    <button id="btnEdit" hidden>Edit quiver</button>
   </div>
   <div id="status"></div>
 
@@ -223,7 +237,8 @@
     undoStack = [];
     arrowSrc = null;
     message = '';
-    document.getElementById('levelTitle').textContent = `Level ${lv.num}`;
+    document.getElementById('levelTitle').textContent = lv.title || `Level ${lv.num}`;
+    showToolbars();
     const od = document.getElementById('originDetails');
     od.hidden = !lv.origin;
     od.open = false;
@@ -232,6 +247,50 @@
   }
 
   function pushUndo() { undoStack.push(clone(state)); }
+
+  // ---------- 自己造 quiver ----------
+  // 编辑时 level.editing 为真；按 Start 后生成一个 custom 关卡，按普通规则玩。
+  const CUSTOM_KEY = 'peel-a-quiver-custom-v1';
+  function showToolbars() {
+    document.getElementById('editToolbar').hidden = !level.editing;
+    document.getElementById('playToolbar').hidden = !!level.editing;
+    document.getElementById('btnEdit').hidden = !level.custom;
+    document.querySelector('.legend').hidden = !!level.editing;
+  }
+  function savedCustom() {
+    try { const c = JSON.parse(localStorage.getItem(CUSTOM_KEY)); return c && c.B && c.B.length ? c : null; }
+    catch (e) { return null; }
+  }
+  function startEditor(from) {
+    level = { id: 'create', title: 'Create your own quiver', editing: true };
+    const pts = from ? layout(from.pos) : [];
+    state = {
+      B: from ? clone(from.B) : [],
+      nodes: from ? from.labels.map((l, i) => ({ label: l, x: pts[i].x, y: pts[i].y, aux: false })) : [],
+      history: [],
+      mode: 'editVertex',
+      newIdx: null,
+      nextLabel: from ? Math.max(...from.labels) + 1 : 1,
+    };
+    undoStack = [];
+    arrowSrc = null;
+    message = 'Click an empty spot to add a vertex.';
+    document.getElementById('levelTitle').textContent = level.title;
+    document.getElementById('originDetails').hidden = true;
+    showToolbars();
+    render();
+  }
+  function startCustom() {
+    if (!state.nodes.length) { message = 'Add at least one vertex first.'; render(); return; }
+    const custom = {
+      id: 'custom', title: 'Your quiver', custom: true,
+      labels: state.nodes.map((_, i) => i + 1),
+      pos: state.nodes.map(n => [n.x, -n.y]),
+      B: clone(state.B),
+    };
+    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom)); } catch (e) { /* ignore */ }
+    loadLevel(custom);
+  }
 
   // ---------- 操作 ----------
   function describeNewNode() {
@@ -249,6 +308,23 @@
   function clickNode(i) {
     const lab = state.nodes[i].label;
     switch (state.mode) {
+      case 'editVertex':
+        message = 'Click an empty spot to add a vertex. To connect vertices, press "Add arrow".';
+        break;
+      case 'editArrow':
+        if (arrowSrc === null) { arrowSrc = i; message = `Source ${lab}; now click the target.`; break; }
+        if (i === arrowSrc) { arrowSrc = null; message = 'Source cleared.'; break; }
+        pushUndo();
+        state.B = Q.addArrow(state.B, arrowSrc, i);
+        message = `Added ${state.nodes[arrowSrc].label}→${lab}.`;
+        arrowSrc = null;
+        break;
+      case 'editDelete':
+        pushUndo();
+        state.B = Q.deleteVertex(state.B, i);
+        state.nodes.splice(i, 1);
+        message = `Deleted ${lab}.`;
+        break;
       case 'mutate':
         pushUndo();
         state.B = Q.mutate(state.B, i);
@@ -289,6 +365,15 @@
   }
 
   function clickEmpty(x, y) {
+    if (state.mode === 'editVertex') {
+      pushUndo();
+      const label = state.nextLabel++;
+      state.B = Q.addVertex(state.B);
+      state.nodes.push({ label, x, y, aux: false });
+      message = `Added vertex ${label}.`;
+      render();
+      return;
+    }
     if (state.mode !== 'addNode') return;
     pushUndo();
     const label = state.nextLabel++;
@@ -312,6 +397,9 @@
       mutate: 'Click a vertex to mutate; drag to move it.',
       peel: 'Click a coloured vertex (sink/source) to peel it.',
       addNode: 'Click an empty spot on the canvas to place a new vertex.',
+      editVertex: 'Click an empty spot to add a vertex.',
+      editArrow: 'Click a source, then a target, to add an arrow. An arrow in the opposite direction cancels one.',
+      editDelete: 'Click a vertex to delete it.',
     }[m] || '';
     render();
   }
@@ -363,7 +451,8 @@
     nodes.forEach((n, i) => {
       ctx.beginPath(); ctx.arc(n.x, n.y, R, 0, 2 * Math.PI);
       ctx.fillStyle = nodeColor(i); ctx.fill();
-      const highlighted = (state.mode === 'addArrows' && (i === state.newIdx || i === arrowSrc));
+      const highlighted = (state.mode === 'addArrows' && (i === state.newIdx || i === arrowSrc)) ||
+                          (state.mode === 'editArrow' && i === arrowSrc);
       ctx.lineWidth = highlighted ? 3.5 : 2;
       ctx.strokeStyle = n.aux ? getVar('--aux') : '#1d1d1b';
       ctx.setLineDash(n.aux ? [4, 3] : []);
@@ -385,7 +474,11 @@
         else if (B[i][j] < 0) drawArrow(ctx, nodes[j], nodes[i], -B[i][j]);
       }
     }
-    if (nodes.length === 0) {
+    if (nodes.length === 0 && level.editing) {
+      ctx.fillStyle = getVar('--muted'); ctx.font = '15px -apple-system, Arial, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('Click anywhere to add a vertex', w / 2, h / 2);
+    } else if (nodes.length === 0) {
       ctx.fillStyle = getVar('--both'); ctx.font = '600 28px -apple-system, Arial, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('Peeled!', w / 2, h / 2);
@@ -397,20 +490,24 @@
     document.getElementById('btnPeel').classList.toggle('active', mode === 'peel');
     document.getElementById('btnAddNode').classList.toggle('active', mode === 'addNode');
     document.getElementById('btnUndo').disabled = undoStack.length === 0;
+    document.getElementById('btnEUndo').disabled = undoStack.length === 0;
+    document.getElementById('btnEVertex').classList.toggle('active', state.mode === 'editVertex');
+    document.getElementById('btnEArrow').classList.toggle('active', state.mode === 'editArrow');
+    document.getElementById('btnEDelete').classList.toggle('active', state.mode === 'editDelete');
     const st = document.getElementById('status');
-    if (nodes.length === 0) {
+    if (nodes.length === 0 && !level.editing) {
       const nm = state.history.filter(s => s.startsWith('μ')).length;
       const na = state.history.filter(s => s.startsWith('+')).length;
       st.textContent = `Peeled! ${nm} mutation${nm === 1 ? '' : 's'}, ${na} node${na === 1 ? '' : 's'} added.`;
       st.className = 'win';
-      markSolved(level.id);
+      if (!level.custom) markSolved(level.id);
     } else {
       st.textContent = message;
       st.className = '';
     }
     renderHint();
     document.getElementById('history').textContent =
-      state.history.length ? 'Moves: ' + state.history.join('  ') : '';
+      state.history.length && !level.editing ? 'Moves: ' + state.history.join('  ') : '';
   }
 
   // 新手关的分步提示，根据当前局面给出下一步该做什么
@@ -482,6 +579,16 @@
   document.getElementById('btnDone').onclick = () => setMode('mutate');
   document.getElementById('btnUndo').onclick = undo;
   document.getElementById('btnReset').onclick = () => loadLevel(level);
+  document.getElementById('btnEVertex').onclick = () => setMode('editVertex');
+  document.getElementById('btnEArrow').onclick = () => setMode('editArrow');
+  document.getElementById('btnEDelete').onclick = () => setMode('editDelete');
+  document.getElementById('btnEUndo').onclick = undo;
+  document.getElementById('btnEClear').onclick = () => {
+    if (!state.nodes.length) return;
+    pushUndo(); state.B = []; state.nodes = []; arrowSrc = null; message = 'Cleared.'; render();
+  };
+  document.getElementById('btnEStart').onclick = startCustom;
+  document.getElementById('btnEdit').onclick = () => startEditor(level);
   function undo() {
     if (!undoStack.length) return;
     // 撤销只回退 quiver 和模式，保留玩家拖好的顶点位置
@@ -544,6 +651,22 @@
       list.appendChild(card);
       drawThumb(card.querySelector('canvas'), lv);
     });
+    const card = document.createElement('button');
+    card.className = 'card create';
+    card.innerHTML = '<canvas></canvas><div class="meta"><span class="name">Create your own quiver</span></div>';
+    card.onclick = () => { location.hash = '#create'; };
+    list.appendChild(card);
+    drawPlus(card.querySelector('canvas'));
+  }
+
+  function drawPlus(canvas) {
+    const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    const c = canvas.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.strokeStyle = getVar('--muted'); c.lineWidth = 2;
+    c.setLineDash([5, 4]); c.beginPath(); c.arc(w / 2, h / 2, 28, 0, 2 * Math.PI); c.stroke(); c.setLineDash([]);
+    c.beginPath(); c.moveTo(w / 2 - 12, h / 2); c.lineTo(w / 2 + 12, h / 2);
+    c.moveTo(w / 2, h / 2 - 12); c.lineTo(w / 2, h / 2 + 12); c.stroke();
   }
 
   function showGame(i) {
@@ -555,6 +678,7 @@
   function route() {
     const i = LEVELS.findIndex(lv => '#' + lv.id === location.hash);
     if (i >= 0) showGame(i);
+    else if (location.hash === '#create') { showView('gameView'); resizeCanvas(); startEditor(savedCustom()); }
     else if (location.hash === '#rules') showView('rulesView');
     else showMenu();
   }
