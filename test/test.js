@@ -122,4 +122,42 @@ assert.ok(B1.every((_, i) => !Q.isSink(B1, i) && !Q.isSource(B1, i)));
 const sol1 = 'mu 1,mu 4,peel 2,mu 4,mu 5,peel 3,mu 1,mu 6,peel 4,peel 1,peel 5,peel 6'.split(',');
 assert.strictEqual(play(B1, sol1).length, 0);
 
+// 关卡数据直接从 web/index.html 里读，保证测的就是游戏里的关卡
+const html = require('fs').readFileSync(require('path').join(__dirname, '../web/index.html'), 'utf8');
+const LEVELS = new Function('return ' + html.match(/const LEVELS = (\[[\s\S]*?\n  \]);/)[1])();
+const lvById = id => LEVELS.find(lv => lv.id === id);
+for (const lv of LEVELS) {
+  assert.strictEqual(lv.B.length, lv.labels.length, lv.id);
+  assert.strictEqual(lv.pos.length, lv.labels.length, lv.id);
+  lv.B.forEach((r, i) => r.forEach((x, j) => assert.strictEqual(x, 0 - lv.B[j][i], lv.id)));
+}
+
+// 11. Level 5（FG SL_3，挖掉一个圆盘的环面）：11 个顶点，一开始没有 sink/source
+const B5 = lvById('level-5').B;
+assert.strictEqual(B5.length, 11);
+assert.ok(B5.every((_, i) => !Q.isSink(B5, i) && !Q.isSource(B5, i)));
+
+// 12. 特殊关（SL_4 长条，N=2）：按论文 Proposition (strip) 的顺序做 deletion move（每次剥完再把 mutation 倒回去），
+//     从不 mutate 或剥锁住的顶点，最后 ℓ 上的顶点全部剥掉
+const SP = lvById('level-special');
+assert.deepStrictEqual(SP.locked, [1, 2, 3, 25, 26, 27]);
+assert.deepStrictEqual(SP.goal, [13, 14, 15]);
+const solSP = ('mu 4,mu 5,mu 7,mu 8,mu 10,peel 6,mu 10,mu 8,mu 7,mu 5,mu 4,mu 8,mu 9,mu 11,mu 12,peel 10,mu 12,' +
+  'mu 11,mu 9,mu 8,mu 9,mu 11,mu 12,mu 14,mu 15,peel 13,mu 15,mu 14,mu 12,mu 11,mu 9,mu 14,mu 16,' +
+  'mu 17,mu 19,peel 15,mu 19,mu 17,mu 16,mu 14,mu 16,mu 17,mu 19,mu 20,mu 22,peel 18,mu 22,mu 20,' +
+  'mu 19,mu 17,mu 16,mu 20,mu 21,mu 23,mu 24,peel 22,mu 24,mu 23,mu 21,mu 20,mu 11,peel 9,mu 11,' +
+  'mu 11,peel 12,mu 11,mu 17,peel 16,mu 17,mu 17,peel 19,mu 17,peel 14').split(',');
+let BS = SP.B, labS = SP.labels.slice();
+for (const mv of solSP) {
+  const [op, l] = mv.split(' '), i = labS.indexOf(Number(l));
+  assert.ok(i >= 0 && !SP.locked.includes(Number(l)), mv);
+  if (op === 'mu') BS = Q.mutate(BS, i);
+  else {
+    assert.ok(Q.isSink(BS, i) || Q.isSource(BS, i), `${mv} 不是 sink/source`);
+    BS = Q.deleteVertex(BS, i); labS = labS.filter((_, j) => j !== i);
+  }
+}
+assert.ok(SP.goal.every(g => !labS.includes(g)));
+assert.ok(SP.locked.every(g => labS.includes(g)));
+
 console.log('all tests passed');

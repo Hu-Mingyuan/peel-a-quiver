@@ -126,6 +126,8 @@
     <span><span class="dot" style="background:var(--source)"></span><span data-i18n="lgSource">source</span></span>
     <span><span class="dot" style="background:var(--both)"></span><span data-i18n="lgIso">isolated (both sink and source)</span></span>
     <span><span class="dot" style="border:2px dashed var(--aux)"></span><span data-i18n="lgAux">auxiliary node</span></span>
+    <span id="legLocked" hidden><span class="dot" style="background:#d9d8d2;border:1.5px solid #1d1d1b;border-radius:2px"></span><span data-i18n="lgLocked">locked (cannot be mutated or peeled)</span></span>
+    <span id="legGoal" hidden><span class="dot" style="border:2px solid #c0392b"></span><span data-i18n="lgGoal">on ℓ: peel these to win</span></span>
   </div>
   <div id="history"></div>
 
@@ -208,6 +210,27 @@
           [0, -1, 0, 1, 0, 0, 0, 0, 1, 0]],
     },
     {
+      // FG SL_3 quiver，挖掉一个圆盘的环面、边界上一个 marked point；由 tools/fg_surface.py 的
+      // fg_polygon(['a','b','a','b',None], 3) 生成（SL_2 版本就是 Level 3）。布局是自动搜出来的。
+      id: 'level-5',
+      num: '5',
+      origin: 'The Fock–Goncharov quiver for SL₃ on a torus with a disk removed, with one marked point on the boundary. The vertices on the boundary are frozen and left out; the SL₂ version of this surface is Level 3.',
+      originZh: 'SL₃ 的 Fock–Goncharov 箭图，曲面是挖掉一个圆盘的环面，边界上有一个标记点。边界上的顶点是冻结的，这里去掉了；这个曲面的 SL₂ 版本就是第 3 关。',
+      labels: [1,  2,  3,  4,  5,  6,  7,  8,  9,  10,  11],
+      pos: [[0.32,  -0.311],  [0.019,  0.69],  [-0.616,  0.037],  [0.381,  -1.17],  [-1.173,  -0.546],  [1.66,  -0.359],  [1.985,  0.686],  [0.837,  0.352],  [0.694,  1.211],  [1.144,  1.881],  [-0.658,  1.245]],
+      B: [[0,  1,  -1,  1,  -1,  -1,  1,  0,  0,  0,  0],
+          [-1,  0,  1,  0,  0,  0,  0,  0,  -1,  0,  1],
+          [1,  -1,  0,  1,  0,  0,  0,  -1,  0,  0,  0],
+          [-1,  0,  -1,  0,  1,  0,  0,  1,  0,  0,  0],
+          [1,  0,  0,  -1,  0,  0,  0,  0,  0,  0,  -1],
+          [1,  0,  0,  0,  0,  0,  -1,  -1,  1,  0,  0],
+          [-1,  0,  0,  0,  0,  1,  0,  1,  0,  -1,  0],
+          [0,  0,  1,  -1,  0,  1,  -1,  0,  -1,  1,  0],
+          [0,  1,  0,  0,  0,  -1,  0,  1,  0,  0,  -1],
+          [0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  1],
+          [0,  -1,  0,  0,  1,  0,  0,  0,  1,  -1,  0]],
+    },
+    {
       id: 'level-inf',
       num: '∞',
       origin: 'A once-punctured torus: the quiver of an ideal triangulation, known as the Markov quiver.',
@@ -215,6 +238,48 @@
       labels: [1, 2, 3],
       pos: [[0, 0], [2, 0], [1, 1.732]],
       B: [[0, 2, -2], [-2, 0, 2], [2, -2, 0]],
+    },
+    {
+      // 特殊关：论文第二节 Proposition (strip)，SL_4、N=2 的长条；由 tools/fg_strip.py 的 strip(4, 2) 生成，
+      // 顶点按从左到右编号。两端弧 e_0、e_4 上的顶点锁住（不能 mutate、不能剥），剥掉中间弧 ℓ=e_2 上的顶点就过关。
+      id: 'level-special',
+      titleKey: 'special',
+      origin: 'The Fock–Goncharov quiver for SL₄ on a strip cut into four triangles by the arcs e₀, …, e₄. It comes from the proof in Section 2 of Ice and mirrors: cutting a surface along the middle arc ℓ = e₂ gives a simpler surface, and the proof peels the vertices on ℓ without touching the end arcs, which are glued to the rest of the surface. The vertices on the two long sides of the strip are frozen and left out.',
+      originZh: 'SL₄ 的 Fock–Goncharov 箭图，曲面是一条长条，被弧 e₀, …, e₄ 分成四个三角形。它来自 Ice and mirrors 第二节的证明：沿中间的弧 ℓ = e₂ 切开，曲面就变简单了；证明在不碰两端弧（它们连着曲面的其余部分）的情况下剥掉 ℓ 上的顶点。长条两条长边上的顶点是冻结的，这里去掉了。',
+      note: 'Special rules for this level: the grey square vertices lie on the end arcs e₀ and e₄ and are locked — they cannot be mutated or peeled. You win once the three vertices on the middle arc ℓ = e₂ (red rings) are peeled; the other vertices may stay.',
+      noteZh: '本关特殊规则：灰色方块顶点在两端的弧 e₀ 和 e₄ 上，被锁住了，不能突变也不能剥。把中间弧 ℓ = e₂ 上的三个顶点（红圈）都剥掉就过关，其他顶点可以留着。',
+      labels: [1,  2,  3,  4,  5,  6,  7,  8,  9,  10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27],
+      locked: [1,  2,  3,  25,  26,  27],
+      goal: [13,  14,  15],
+      pos: [[0.0,  0.75],  [0.0,  0.5],  [0.0,  0.25],  [0.4,  0.75],  [0.4,  0.5],  [0.4,  0.25],  [0.8,  0.75],  [0.8,  0.5],  [0.8,  0.25],  [1.2,  0.75],  [1.2,  0.5],  [1.2,  0.25],  [1.6,  0.75],  [1.6,  0.5],  [1.6,  0.25],  [2.0,  0.75],  [2.0,  0.5],  [2.0,  0.25],  [2.4,  0.75],  [2.4,  0.5],  [2.4,  0.25],  [2.8,  0.75],  [2.8,  0.5],  [2.8,  0.25],  [3.2,  0.75],  [3.2,  0.5],  [3.2,  0.25]],
+      bg: [{"a":  [0,  1],  "b":  [3.2,  1],  "side":  true},  {"a":  [0,  0],  "b":  [3.2,  0],  "side":  true},  {"a":  [0.0,  1],  "b":  [0.0,  0],  "label":  "e₀"},  {"a":  [1.6,  1],  "b":  [1.6,  0],  "label":  "ℓ = e₂"},  {"a":  [3.2,  1],  "b":  [3.2,  0],  "label":  "e₄"},  {"a":  [1.6,  1],  "b":  [0.0,  0],  "label":  "e₁"},  {"a":  [3.2,  1],  "b":  [1.6,  0],  "label":  "e₃"}],
+      B: [[0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [-1,  1,  0,  0,  -1,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  -1,  1,  1,  0,  -1,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  -1,  0,  1,  0,  0,  0,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  -1,  1,  0,  0,  -1,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  -1,  0,  1,  0,  1,  0,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  1,  0,  -1,  0,  0,  1,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  -1,  0,  0,  0,  1,  0,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  1,  -1,  -1,  0,  1,  1,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  -1,  0,  0,  1,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  1,  0,  0,  -1,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  1,  1,  0,  -1,  -1,  1,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  0,  1,  0,  0,  0,  -1,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  1,  0,  0,  -1,  0,  1,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  0,  1,  0,  1,  0,  -1,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  -1,  0,  0,  1,  -1,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  0,  0,  0,  1,  0,  -1,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  -1,  0,  1,  1,  -1,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  -1,  0,  0,  1,  -1],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0]],
     },
   ];
 
@@ -251,7 +316,7 @@
     bEVertex: '添加顶点', bEArrow: '添加箭头', bEDelete: '删除顶点', bEClear: '清空', bEStart: '开始剥',
     bShare: '分享链接', bMutate: '突变', bPeel: '剥汇点/源点', bAddNode: '加辅助顶点', bDone: '完成',
     bUndo: '撤销', bReset: '重来', bEdit: '编辑箭图',
-    lgSink: '汇点', lgSource: '源点', lgIso: '孤立点（既是汇点也是源点）', lgAux: '辅助顶点',
+    lgSink: '汇点', lgSource: '源点', lgIso: '孤立点（既是汇点也是源点）', lgAux: '辅助顶点', lgLocked: '锁住（不能突变或剥）', lgGoal: 'ℓ 上的顶点：剥掉它们就过关',
     rulesBody: `
       <p><b>目标。</b>把箭图剥成空箭图。</p>
       <p><b>操作。</b></p>
@@ -292,6 +357,9 @@
       mode_editDelete: 'Click a vertex to delete it.',
       canvasEmpty: 'Click anywhere to add a vertex', peeledBig: 'Peeled!',
       win: (nm, na) => `Peeled! ${nm} mutation${nm === 1 ? '' : 's'}, ${na} node${na === 1 ? '' : 's'} added.`,
+      winGoal: (nm, na) => `ℓ is peeled! ${nm} mutation${nm === 1 ? '' : 's'}, ${na} node${na === 1 ? '' : 's'} added.`,
+      goalBig: 'ℓ peeled!', special: 'Special level',
+      locked: l => `${l} is locked: in this level it cannot be mutated or peeled.`,
       cleared: 'Cleared.', undid: 'Undid one step.',
       overflow: l => `Mutating at ${l} makes an arrow multiplicity too large to count exactly (over 2⁵³ ≈ 9×10¹⁵), so we call it ∞. Failed. Press Restart to try again.`,
       failBig: '∞  Failed',
@@ -325,6 +393,9 @@
       mode_editDelete: '点击顶点将它删除。',
       canvasEmpty: '点击任意位置添加顶点', peeledBig: '剥完了！',
       win: (nm, na) => `剥完了！用了 ${nm} 次突变，加了 ${na} 个辅助顶点。`,
+      winGoal: (nm, na) => `ℓ 剥完了！用了 ${nm} 次突变，加了 ${na} 个辅助顶点。`,
+      goalBig: 'ℓ 剥完了！', special: '特殊关',
+      locked: l => `${l} 被锁住了：本关不能突变也不能剥它。`,
       cleared: '已清空。', undid: '已撤销一步。',
       overflow: l => `在 ${l} 处突变会让箭头重数大到无法精确计数（超过 2⁵³ ≈ 9×10¹⁵），记作 ∞。失败！按“重来”重新开始。`,
       failBig: '∞  失败',
@@ -368,13 +439,28 @@
     return pos.map(p => ({ x: ox + s * (p[0] - minX), y: h - (oy + s * (p[1] - minY)) }));
   }
 
+  // 关卡坐标连同背景线（特殊关的长条和弧）一起缩放到画布
+  function levelLayout(lv, w, h, pad) {
+    const bgPts = (lv.bg || []).flatMap(g => [g.a, g.b]);
+    const all = layout(lv.pos.concat(bgPts), w, h, pad);
+    const n = lv.pos.length;
+    return { pts: all.slice(0, n), bg: (lv.bg || []).map((g, k) => ({ a: all[n + 2 * k], b: all[n + 2 * k + 1], label: g.label, side: g.side })) };
+  }
+  // 普通关卡剥空就赢；有 goal 的关卡（特殊关）剥掉所有 goal 顶点就赢
+  function won() {
+    if (level.editing) return false;
+    return level.goal ? !state.nodes.some(n => n.goal) : state.nodes.length === 0;
+  }
+
   function loadLevel(lv) {
     failed = false;
     level = lv;
-    const pts = layout(lv.pos);
+    const { pts, bg } = levelLayout(lv);
     state = {
       B: clone(lv.B),
-      nodes: lv.labels.map((l, i) => ({ label: l, x: pts[i].x, y: pts[i].y, aux: false })),
+      nodes: lv.labels.map((l, i) => ({ label: l, x: pts[i].x, y: pts[i].y, aux: false,
+        locked: !!(lv.locked && lv.locked.includes(l)), goal: !!(lv.goal && lv.goal.includes(l)) })),
+      bg,
       history: [],
       mode: 'mutate',
       newIdx: null,
@@ -384,6 +470,8 @@
     arrowSrc = null;
     message = null;
     document.getElementById('levelTitle').textContent = levelTitle(lv);
+    document.getElementById('legLocked').hidden = !lv.locked;
+    document.getElementById('legGoal').hidden = !lv.goal;
     showToolbars();
     const od = document.getElementById('originDetails');
     od.hidden = !lv.origin;
@@ -500,6 +588,9 @@
 
   function clickNode(i) {
     const lab = state.nodes[i].label;
+    if (state.nodes[i].locked && (state.mode === 'mutate' || state.mode === 'peel')) {
+      message = ['locked', lab]; render(); return;
+    }
     switch (state.mode) {
       case 'editVertex':
         message = ['editVertexNode'];
@@ -640,13 +731,32 @@
     }
   }
 
+  // 背景线：特殊关的长条边（实线）和弧（虚线，带名字）
+  function drawBg(c, bg) {
+    for (const g of bg) {
+      c.strokeStyle = g.side ? '#bdbcb5' : '#d9d8d2'; c.lineWidth = g.side ? 3 : 1.5;
+      c.setLineDash(g.side ? [] : [6, 5]);
+      c.beginPath(); c.moveTo(g.a.x, g.a.y); c.lineTo(g.b.x, g.b.y); c.stroke();
+      c.setLineDash([]);
+      if (g.label) {
+        const top = g.a.y < g.b.y ? g.a : g.b;
+        c.fillStyle = g.label.startsWith('ℓ') ? '#c0392b' : '#6b6b66';
+        c.font = '600 13px -apple-system, Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'bottom';
+        c.fillText(g.label, top.x, top.y - 6);
+      }
+    }
+  }
+
   function render() {
     const w = cv.clientWidth, h = cv.clientHeight;
     ctx.clearRect(0, 0, w, h);
     const { B, nodes } = state;
+    drawBg(ctx, state.bg || []);
     nodes.forEach((n, i) => {
-      ctx.beginPath(); ctx.arc(n.x, n.y, R, 0, 2 * Math.PI);
-      ctx.fillStyle = nodeColor(i); ctx.fill();
+      ctx.beginPath();
+      if (n.locked) ctx.rect(n.x - R + 1, n.y - R + 1, 2 * R - 2, 2 * R - 2);
+      else ctx.arc(n.x, n.y, R, 0, 2 * Math.PI);
+      ctx.fillStyle = n.locked ? '#d9d8d2' : nodeColor(i); ctx.fill();
       const highlighted = (state.mode === 'addArrows' && (i === state.newIdx || i === arrowSrc)) ||
                           (state.mode === 'editArrow' && i === arrowSrc);
       ctx.lineWidth = highlighted ? 3.5 : 2;
@@ -656,8 +766,11 @@
       if (i === arrowSrc) {
         ctx.beginPath(); ctx.arc(n.x, n.y, R + 5, 0, 2 * Math.PI);
         ctx.strokeStyle = getVar('--aux'); ctx.lineWidth = 2; ctx.stroke();
+      } else if (n.goal) {
+        ctx.beginPath(); ctx.arc(n.x, n.y, R + 4, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 2; ctx.stroke();
       }
-      const filled = nodeColor(i) !== getVar('--node');
+      const filled = !n.locked && nodeColor(i) !== getVar('--node');
       ctx.fillStyle = filled ? '#fff' : '#1d1d1b';
       ctx.font = '600 14px -apple-system, Arial, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -674,10 +787,11 @@
       ctx.fillStyle = getVar('--muted'); ctx.font = '15px -apple-system, Arial, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(tr('canvasEmpty'), w / 2, h / 2);
-    } else if (nodes.length === 0) {
+    } else if (won()) {
       ctx.fillStyle = getVar('--both'); ctx.font = '600 28px -apple-system, Arial, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(tr('peeledBig'), w / 2, h / 2);
+      if (level.goal) ctx.fillText(tr('goalBig'), w / 2, 28);
+      else ctx.fillText(tr('peeledBig'), w / 2, h / 2);
     }
 
     if (failed) {
@@ -700,10 +814,10 @@
     document.getElementById('btnEArrow').classList.toggle('active', state.mode === 'editArrow');
     document.getElementById('btnEDelete').classList.toggle('active', state.mode === 'editDelete');
     const st = document.getElementById('status');
-    if (nodes.length === 0 && !level.editing) {
+    if (won()) {
       const nm = state.history.filter(s => s.startsWith('μ')).length;
       const na = state.history.filter(s => s.startsWith('+')).length;
-      st.textContent = tr('win', nm, na);
+      st.textContent = tr(level.goal ? 'winGoal' : 'win', nm, na);
       st.className = 'win';
       if (!level.custom) markSolved(level.id);
     } else {
@@ -719,7 +833,12 @@
   // 新手关的分步提示，根据当前局面给出下一步该做什么
   function renderHint() {
     const el = document.getElementById('hint');
-    if (!level.tutorial) { el.hidden = true; return; }
+    if (!level.tutorial) {
+      const note = lang === 'zh' ? level.noteZh : level.note;   // 只有特殊关有 note
+      el.hidden = !note;
+      if (note) el.textContent = note;
+      return;
+    }
     el.hidden = false;
     const { B, nodes } = state;
     const lab = i => nodes[i].label;
@@ -823,10 +942,12 @@
     const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
     canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
     const c = canvas.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const r = 9, pts = layout(lv.pos, w, h, 22);
-    pts.forEach(p => {
-      c.beginPath(); c.arc(p.x, p.y, r, 0, 2 * Math.PI);
-      c.fillStyle = '#fff'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = '#1d1d1b'; c.stroke();
+    const r = lv.pos.length > 15 ? 6 : 9, { pts } = levelLayout(lv, w, h, 22);
+    pts.forEach((p, i) => {
+      const locked = lv.locked && lv.locked.includes(lv.labels[i]);
+      c.beginPath();
+      if (locked) c.rect(p.x - r, p.y - r, 2 * r, 2 * r); else c.arc(p.x, p.y, r, 0, 2 * Math.PI);
+      c.fillStyle = locked ? '#d9d8d2' : '#fff'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = '#1d1d1b'; c.stroke();
     });
     for (let i = 0; i < lv.B.length; i++) for (let j = i + 1; j < lv.B.length; j++) {
       if (lv.B[i][j] > 0) drawArrow(c, pts[i], pts[j], lv.B[i][j], r);
