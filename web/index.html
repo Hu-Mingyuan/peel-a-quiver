@@ -226,7 +226,7 @@
   let state;          // { B, nodes:[{label,x,y,aux}], history:[], mode, newIdx, nextLabel }
   let undoStack = [];
   let arrowSrc = null; // 加箭头时已选的起点下标
-  let failTimer = null; // 箭头重数溢出后自动重开本关的计时器
+  let failed = false;   // 箭头重数溢出后为真：画面锁住，只能按 Restart
   let message = null;   // ['key', ...参数]，显示时按当前语言翻译
 
   function clone(s) { return JSON.parse(JSON.stringify(s)); }
@@ -293,7 +293,7 @@
       canvasEmpty: 'Click anywhere to add a vertex', peeledBig: 'Peeled!',
       win: (nm, na) => `Peeled! ${nm} mutation${nm === 1 ? '' : 's'}, ${na} node${na === 1 ? '' : 's'} added.`,
       cleared: 'Cleared.', undid: 'Undid one step.',
-      overflow: (l, t) => `Mutating at ${l} makes an arrow multiplicity too large to count exactly (over 2⁵³ ≈ 9×10¹⁵), so we call it ∞. Failed. Restarting in ${t} s…`,
+      overflow: l => `Mutating at ${l} makes an arrow multiplicity too large to count exactly (over 2⁵³ ≈ 9×10¹⁵), so we call it ∞. Failed. Press Restart to try again.`,
       failBig: '∞  Failed',
       hintDone: 'Well done! Every level works the same way: mutate until a sink or source appears, peel it, repeat. ' +
                 'Harder levels may also need extra vertices; see "Add node" in the Rules.',
@@ -326,7 +326,7 @@
       canvasEmpty: '点击任意位置添加顶点', peeledBig: '剥完了！',
       win: (nm, na) => `剥完了！用了 ${nm} 次突变，加了 ${na} 个辅助顶点。`,
       cleared: '已清空。', undid: '已撤销一步。',
-      overflow: (l, t) => `在 ${l} 处突变会让箭头重数大到无法精确计数（超过 2⁵³ ≈ 9×10¹⁵），记作 ∞。失败！${t} 秒后重新开始本关……`,
+      overflow: l => `在 ${l} 处突变会让箭头重数大到无法精确计数（超过 2⁵³ ≈ 9×10¹⁵），记作 ∞。失败！按“重来”重新开始。`,
       failBig: '∞  失败',
       hintDone: '做得好！每一关的玩法都一样：突变直到出现汇点或源点，把它剥去，重复。更难的关卡可能还需要加顶点，见规则里的“加辅助顶点”。',
       hintNoAux: '这一关不需要加顶点。按“完成”，再按“突变”。',
@@ -369,7 +369,7 @@
   }
 
   function loadLevel(lv) {
-    clearInterval(failTimer); failTimer = null;
+    failed = false;
     level = lv;
     const pts = layout(lv.pos);
     state = {
@@ -424,7 +424,7 @@
       newIdx: null,
       nextLabel: from ? Math.max(...from.labels) + 1 : 1,
     };
-    clearInterval(failTimer); failTimer = null;
+    failed = false;
     undoStack = [];
     arrowSrc = null;
     message = ['mode_editVertex'];
@@ -520,7 +520,7 @@
         break;
       case 'mutate': {
         const C = Q.mutate(state.B, i);
-        // 超过 2^53 后浮点数不再精确（再往后会变成 Infinity/NaN，箭头就画不出来了）：判为失败，强制重开
+        // 超过 2^53 后浮点数不再精确（再往后会变成 Infinity/NaN，箭头就画不出来了）：判为失败，锁住画面，只能按 Restart
         if (C.some(r => r.some(x => !Number.isSafeInteger(x)))) { fail(lab); return; }
         pushUndo();
         state.B = C;
@@ -562,14 +562,8 @@
   }
 
   function fail(lab) {
-    let t = 3;
-    message = ['overflow', lab, t];
-    failTimer = setInterval(() => {
-      t -= 1;
-      if (t <= 0) { loadLevel(level); return; }
-      message = ['overflow', lab, t];
-      render();
-    }, 1000);
+    failed = true;
+    message = ['overflow', lab];
     render();
   }
 
@@ -686,7 +680,7 @@
       ctx.fillText(tr('peeledBig'), w / 2, h / 2);
     }
 
-    if (failTimer) {
+    if (failed) {
       ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = '#c0392b'; ctx.font = '600 32px -apple-system, Arial, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -698,9 +692,9 @@
     document.getElementById('btnMutate').classList.toggle('active', mode === 'mutate');
     document.getElementById('btnPeel').classList.toggle('active', mode === 'peel');
     document.getElementById('btnAddNode').classList.toggle('active', mode === 'addNode');
-    document.getElementById('btnUndo').disabled = undoStack.length === 0 || !!failTimer;
+    document.getElementById('btnUndo').disabled = undoStack.length === 0 || failed;
     for (const id of ['btnMutate', 'btnPeel', 'btnAddNode', 'btnDone', 'btnEdit', 'btnShare'])
-      document.getElementById(id).disabled = !!failTimer;
+      document.getElementById(id).disabled = failed;
     document.getElementById('btnEUndo').disabled = undoStack.length === 0;
     document.getElementById('btnEVertex').classList.toggle('active', state.mode === 'editVertex');
     document.getElementById('btnEArrow').classList.toggle('active', state.mode === 'editArrow');
@@ -714,7 +708,7 @@
       if (!level.custom) markSolved(level.id);
     } else {
       st.textContent = message ? tr(...message) : '';
-      st.className = failTimer ? 'fail' : '';
+      st.className = failed ? 'fail' : '';
     }
     renderHint();
     document.getElementById('history').textContent =
@@ -758,7 +752,7 @@
     return -1;
   }
   cv.addEventListener('pointerdown', e => {
-    if (failTimer) return;
+    if (failed) return;
     const p = pt(e), i = hit(p);
     drag = { idx: i, sx: p.x, sy: p.y, moved: false };
     cv.setPointerCapture(e.pointerId);
@@ -801,7 +795,7 @@
   document.getElementById('btnShare').onclick = share;
   document.getElementById('btnEShare').onclick = share;
   function undo() {
-    if (!undoStack.length || failTimer) return;
+    if (!undoStack.length || failed) return;
     // 撤销只回退 quiver 和模式，保留玩家拖好的顶点位置
     const pos = new Map(state.nodes.map(n => [n.label, { x: n.x, y: n.y }]));
     state = undoStack.pop();
@@ -841,7 +835,7 @@
   }
 
   function showView(id) {
-    clearInterval(failTimer); failTimer = null;
+    failed = false;
     for (const v of ['menuView', 'rulesView', 'gameView']) document.getElementById(v).hidden = v !== id;
     window.scrollTo(0, 0);
   }
