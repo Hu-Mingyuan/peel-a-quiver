@@ -5,7 +5,7 @@
 web/index.html stays the single source. The build writes
   out/en/index.html, out/zh/index.html  the game with its language fixed (window.PEEL_LANG)
   out/index.html                        redirect to the last used language, or the browser's
-  out/*.js (quiver.js; demo-strip.js is loaded from ../ when the demo opens)
+  out/*.js (quiver.js, challenge.js; demo-strip.js is loaded from ../ when the demo opens)
 Hashes (#level-3, #q=..., #rules) are kept by every redirect, so old links keep working.
 """
 import hashlib
@@ -37,8 +37,9 @@ location.replace(l + '/' + location.hash);"""
 
 def build(out):
     src = open(os.path.join(ROOT, 'web', 'index.html'), encoding='utf-8').read()
-    tag = '<script src="quiver.js"></script>'
-    assert src.count(tag) == 1 and src.count('<html lang="en">') == 1
+    scripts = ('quiver.js', 'challenge.js')                  # 页面直接引用的脚本，发布时改成 ../x.js?v=hash
+    tags = {f: f'<script src="{f}"></script>' for f in scripts}
+    assert all(src.count(t) == 1 for t in tags.values()) and src.count('<html lang="en">') == 1
     if os.path.isdir(out):
         shutil.rmtree(out)
     os.makedirs(out)
@@ -46,10 +47,13 @@ def build(out):
         if f.endswith('.js'):
             shutil.copy(os.path.join(ROOT, 'web', f), os.path.join(out, f))
     digest = lambda f: hashlib.sha1(open(os.path.join(ROOT, 'web', f), 'rb').read()).hexdigest()[:10]
-    ver, qver = digest('demo-strip.js'), digest('quiver.js')   # 文件一变网址就变，避开浏览器缓存
+    ver = digest('demo-strip.js')                              # 文件一变网址就变，避开浏览器缓存
     for lang, html_lang in (('en', 'en'), ('zh', 'zh-CN')):
-        page = src.replace(tag, f"<script>window.PEEL_LANG = '{lang}'; window.DEMO_VER = '{ver}';</script>\n"
-                                f"<script src=\"../quiver.js?v={qver}\"></script>")
+        page = src
+        for f, t in tags.items():
+            page = page.replace(t, f'<script src="../{f}?v={digest(f)}"></script>')
+        page = page.replace(f'<script src="../quiver.js', f"<script>window.PEEL_LANG = '{lang}'; window.DEMO_VER = '{ver}';</script>\n"
+                                                         f'<script src="../quiver.js', 1)
         page = page.replace('<html lang="en">', f'<html lang="{html_lang}">')
         os.makedirs(os.path.join(out, lang))
         open(os.path.join(out, lang, 'index.html'), 'w', encoding='utf-8').write(page)

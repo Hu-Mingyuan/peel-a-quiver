@@ -183,4 +183,26 @@ assert.ok(SP.locked.every(g => labS.includes(g)));
   assert.strictEqual(muts, 428);
 }
 
+// 14. 挑战模式（web/challenge.js）：每种曲面的箭图顶点数等于公式、没有穿孔；Level 5 和 Level 2 的曲面给出同样的箭图；
+//     同一个 seed 生成同一关，箭头重数 ≤ 2，矩阵反对称，位置个数对
+{
+  const PC = require('../web/challenge.js');
+  assert.strictEqual(PC.ALL_SURFACES.length, 143);
+  assert.strictEqual(PC.SURFACES.length, 115);
+  for (const s of PC.ALL_SURFACES) {
+    const w = PC.polygonWord(s.g, s.ms);
+    assert.ok(PC.noPunctures(w), JSON.stringify(s));
+    assert.strictEqual(PC.fgPolygon(w, s.n).length, s.V);
+  }
+  const L5 = LEVELS.find(l => l.id === 'level-5');
+  assert.deepStrictEqual(PC.fgPolygon(['a', 'b', 'a', 'b', null], 3), L5.B);
+  for (let r = 1; r <= 30; r += 3) for (const seed of [1, 99, 123456789]) {
+    const a = PC.generate(r, seed), b = PC.generate(r, seed);
+    assert.deepStrictEqual(a, b);
+    const n = a.B.length, [lo, hi] = PC.sizeRange(r);
+    assert.ok(n >= lo && n <= hi && a.pos.length === n && a.labels.length === n);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) assert.ok(a.B[i][j] === -a.B[j][i] && Math.abs(a.B[i][j]) <= 2);
+  }
+}
+
 console.log('all tests passed');

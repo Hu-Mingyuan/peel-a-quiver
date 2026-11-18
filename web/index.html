@@ -89,6 +89,7 @@
       </ul>
       <p><b>Controls.</b> Drag a vertex to move it. <b>Undo</b> (also Ctrl/⌘+Z) takes back one step, <b>Restart</b> resets the level, <b>← Levels</b> returns to the level list. Several parallel arrows are drawn as one arrow labelled with their number.</p>
       <p><b>Create your own.</b> The last card on the level list opens an editor. Click an empty spot to add a vertex, use <b>Add arrow</b> to connect vertices (click a source, then a target; an arrow in the opposite direction cancels one), and <b>Delete vertex</b> to remove one. Press <b>Start peeling</b> to play your quiver with the same rules, and <b>Edit quiver</b> to go back to the editor. <b>Share link</b> gives a link that opens your quiver for anyone.</p>
+      <p><b>Challenge mode.</b> Random levels, one after another. Each is the quiver of a random surface with boundary, checked by computer to be peelable without auxiliary nodes. Press <b>Next level →</b> after peeling one; the levels grow as you go. <b>Skip</b> gives a different quiver of the same size.</p>
       <p><b>When is a level solvable?</b> Exactly when its quiver is <i>sub-peelable</i>, i.e. a full subquiver of a quiver that can be peeled using mutations and sink/source removals alone (a <i>peelable</i> quiver). Without adding nodes, a level is solvable exactly when its quiver is peelable.</p>
     </div>
   </section>
@@ -133,6 +134,8 @@
     <span class="sep"></span>
     <button id="btnUndo" data-i18n="bUndo">Undo</button>
     <button id="btnReset" data-i18n="bReset">Restart</button>
+    <button id="btnSkip" data-i18n="bSkip" hidden>Skip</button>
+    <button id="btnNext" class="primary" data-i18n="bNext" hidden>Next level →</button>
     <button id="btnEdit" data-i18n="bEdit" hidden>Edit quiver</button>
     <button id="btnShare" data-i18n="bShare" hidden>Share link</button>
   </div>
@@ -163,6 +166,7 @@
 </main>
 
 <script src="quiver.js"></script>
+<script src="challenge.js"></script>
 <script>
 (function () {
   'use strict';
@@ -338,7 +342,7 @@
     origin: '这个箭图的来历',
     bEVertex: '添加顶点', bEArrow: '添加箭头', bEDelete: '删除顶点', bEClear: '清空', bEStart: '开始剥',
     bShare: '分享链接', bMutate: '突变', bPeel: '剥汇点/源点', bAddNode: '加辅助顶点', bDone: '完成',
-    bUndo: '撤销', bReset: '重来', bEdit: '编辑箭图',
+    bUndo: '撤销', bReset: '重来', bEdit: '编辑箭图', bSkip: '换一关', bNext: '下一关 →',
     lgSink: '汇点', lgSource: '源点', lgIso: '孤立点（既是汇点也是源点）', lgAux: '辅助顶点', lgLocked: '锁住（不能突变或剥）', demoTitle: '论文演示：n = 6 的长条', dPrev: '← 上一步', dNext: '下一步 →', dNextMove: '下一个 deletion move ⏭',
     demoIntro: 'Ice and mirrors 第二节 Proposition (strip) 的证明，对 SL₆、六个三角形的长条（N = 3）一步一步演示。灰色方块（e₀ 和 e₆ 上）始终不动；目标是剥掉中间弧 ℓ = e₃ 上的五个顶点。每个 deletion move 先在一个顶点附近做突变，直到它变成汇点或源点，剥掉它，再把这些突变倒回去。按<b>下一步</b>往前走。', lgGoal: 'ℓ 上的顶点：剥掉它们就过关',
     rulesBody: `
@@ -351,6 +355,7 @@
       </ul>
       <p><b>控制。</b>拖动顶点可以移动它。<b>撤销</b>（也可按 Ctrl/⌘+Z）撤回一步，<b>重来</b>重置本关，<b>← 关卡</b>回到关卡列表。多条平行箭头画成一条，并标上条数。</p>
       <p><b>自己造。</b>关卡列表的最后一张卡片打开编辑器。点击空白处添加顶点，用<b>添加箭头</b>连接顶点（先点起点，再点终点；反方向的箭头会抵消一条），用<b>删除顶点</b>删去顶点。按<b>开始剥</b>用同样的规则玩你的箭图，按<b>编辑箭图</b>回到编辑器。<b>分享链接</b>给出一个链接，别人打开就能玩你的箭图。</p>
+      <p><b>挑战模式。</b>一关接一关的随机关卡。每一关都是一个随机的带边界曲面的箭图，电脑验证过不加辅助顶点就能剥完。剥完后按<b>下一关 →</b>，关卡会越来越大；<b>换一关</b>给出一个同样大小的另一个箭图。</p>
       <p><b>什么时候一关有解？</b>恰好当它的箭图是<i>子可剥的</i>，即某个只用突变和删去汇点/源点就能剥空的箭图（<i>可剥的</i>箭图）的全子箭图。不加顶点时，一关有解恰好当它的箭图是可剥的。</p>
     `,
   };
@@ -385,6 +390,10 @@
       win: (nm, na) => `Peeled! ${nm} mutation${nm === 1 ? '' : 's'}, ${na} node${na === 1 ? '' : 's'} added.`,
       winGoal: (nm, na) => `ℓ is peeled! ${nm} mutation${nm === 1 ? '' : 's'}, ${na} node${na === 1 ? '' : 's'} added.`,
       goalBig: 'ℓ peeled!', special: 'Special level', demoCard: 'Paper demo: n = 6',
+      challenge: 'Challenge mode', challengeTitle: r => `Challenge · level ${r}`, challengeBest: r => `best: level ${r}`,
+      challengeNote: (r, best) => `Random level ${r}. Peel it to get the next one; press “Skip” for a different quiver of the same size. ` +
+        'Levels grow as you go. Every one can be peeled without auxiliary nodes (checked by computer; see “Where this quiver comes from” below).' +
+        (best ? ` Your best: level ${best}.` : ''),
       dLoading: 'Loading…',
       dRound: (r, p) => `Round ${r} (p = ${p})`, dEnd: 'End',
       dLemma: { edge: 'Lemma (edge layer)', tri: 'Lemma (triangle shell)' },
@@ -434,6 +443,10 @@
       win: (nm, na) => `剥完了！用了 ${nm} 次突变，加了 ${na} 个辅助顶点。`,
       winGoal: (nm, na) => `ℓ 剥完了！用了 ${nm} 次突变，加了 ${na} 个辅助顶点。`,
       goalBig: 'ℓ 剥完了！', special: '特殊关', demoCard: '论文演示：n = 6',
+      challenge: '挑战模式', challengeTitle: r => `挑战模式 · 第 ${r} 关`, challengeBest: r => `最高：第 ${r} 关`,
+      challengeNote: (r, best) => `随机生成的第 ${r} 关。剥完就进入下一关；按“换一关”可以换一个同样大小的箭图。` +
+        '关卡会越来越大。每一关都不用加辅助顶点就能剥完（电脑验证过，见下面“这个箭图的来历”）。' +
+        (best ? `你的最高纪录：第 ${best} 关。` : ''),
       dLoading: '加载中……',
       dRound: (r, p) => `第 ${r} 轮（p = ${p}）`, dEnd: '结束',
       dLemma: { edge: 'Lemma (edge layer)', tri: 'Lemma (triangle shell)' },
@@ -461,7 +474,7 @@
     const v = TEXT[lang][key] ?? TEXT.en[key];
     return typeof v === 'function' ? v(...a) : (v ?? '');
   }
-  function levelTitle(lv) { return lv.titleKey ? tr(lv.titleKey) : lv.title || tr('level', lv.num); }
+  function levelTitle(lv) { return lv.challenge ? tr('challengeTitle', lv.round) : lv.titleKey ? tr(lv.titleKey) : lv.title || tr('level', lv.num); }
   function applyLang() {
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
     document.title = lang === 'zh' ? '剥箭图 · Peel a quiver' : 'Peel a quiver';
@@ -915,6 +928,8 @@
     for (const id of ['btnMutate', 'btnPeel', 'btnAddNode', 'btnDone', 'btnEdit', 'btnShare'])
       document.getElementById(id).disabled = failed;
     document.getElementById('btnEUndo').disabled = undoStack.length === 0;
+    document.getElementById('btnNext').hidden = !(level.challenge && won());
+    document.getElementById('btnSkip').hidden = !(level.challenge && !won());
     document.getElementById('btnEVertex').classList.toggle('active', state.mode === 'editVertex');
     document.getElementById('btnEArrow').classList.toggle('active', state.mode === 'editArrow');
     document.getElementById('btnEDelete').classList.toggle('active', state.mode === 'editDelete');
@@ -924,7 +939,8 @@
       const na = state.history.filter(s => s.startsWith('+')).length;
       st.textContent = tr(level.goal ? 'winGoal' : 'win', nm, na);
       st.className = 'win';
-      if (!level.custom) markSolved(level.id);
+      if (level.challenge) challengeWon();
+      else if (!level.custom) markSolved(level.id);
     } else {
       st.textContent = message ? tr(...message) : '';
       st.className = failed ? 'fail' : '';
@@ -939,7 +955,8 @@
   function renderHint() {
     const el = document.getElementById('hint');
     if (!level.tutorial) {
-      const note = lang === 'zh' ? level.noteZh : level.note;   // 只有特殊关有 note
+      const note = level.challenge ? tr('challengeNote', level.round, challenge().best)
+        : lang === 'zh' ? level.noteZh : level.note;   // 只有特殊关有 note
       el.hidden = !note;
       if (note) el.textContent = note;
       return;
@@ -1013,6 +1030,8 @@
   document.getElementById('btnDone').onclick = () => setMode('mutate');
   document.getElementById('btnUndo').onclick = undo;
   document.getElementById('btnReset').onclick = () => loadLevel(level);
+  document.getElementById('btnNext').onclick = () => nextChallenge(true);
+  document.getElementById('btnSkip').onclick = () => nextChallenge(false);
   document.getElementById('btnEVertex').onclick = () => setMode('editVertex');
   document.getElementById('btnEArrow').onclick = () => setMode('editArrow');
   document.getElementById('btnEDelete').onclick = () => setMode('editDelete');
@@ -1335,6 +1354,17 @@
       list.appendChild(card);
       drawThumb(card.querySelector('canvas'), lv);
     });
+    const ccard = document.createElement('button');
+    ccard.className = 'card';
+    ccard.innerHTML = '<canvas></canvas><div class="meta"><span class="name"></span></div>';
+    ccard.querySelector('.name').textContent = tr('challenge');
+    if (challenge().best) {
+      const b = document.createElement('span'); b.className = 'solved'; b.textContent = tr('challengeBest', challenge().best);
+      ccard.querySelector('.meta').appendChild(b);
+    }
+    ccard.onclick = () => { location.hash = '#challenge'; };
+    list.appendChild(ccard);
+    drawThumb(ccard.querySelector('canvas'), challengeLevel({ round: 4, seed: 2026 }));
     const dcard = document.createElement('button');
     dcard.className = 'card';
     dcard.innerHTML = '<canvas></canvas><div class="meta"><span class="name"></span></div>';
@@ -1361,6 +1391,46 @@
     c.moveTo(w / 2, h / 2 - 12); c.lineTo(w / 2, h / 2 + 12); c.stroke();
   }
 
+  // ---------- 挑战模式 ----------
+  // 进度存在 localStorage：{round, seed, best}。同一个 seed 总是生成同一关，刷新页面不会换关。
+  const CH_KEY = 'peel-a-quiver-challenge';
+  let chState = null;
+  const newSeed = () => Math.floor(Math.random() * 4294967296);
+  function challenge() {
+    if (!chState) {
+      try {
+        const c = JSON.parse(localStorage.getItem(CH_KEY) || 'null');
+        if (c && Number.isInteger(c.round) && c.round >= 1 && Number.isInteger(c.seed)) chState = { round: c.round, seed: c.seed, best: c.best | 0 };
+      } catch (e) { /* ignore */ }
+      if (!chState) chState = { round: 1, seed: newSeed(), best: 0 };
+    }
+    return chState;
+  }
+  function saveChallenge() { try { localStorage.setItem(CH_KEY, JSON.stringify(chState)); } catch (e) { /* ignore */ } }
+  function challengeLevel(c) {
+    const PC = window.PeelChallenge, g = PC.generate(c.round, c.seed);
+    return { id: 'challenge', challenge: true, round: c.round, labels: g.labels, pos: g.pos, B: g.B,
+      origin: PC.describe(g.surface, g.mutations, 'en'), originZh: PC.describe(g.surface, g.mutations, 'zh') };
+  }
+  function challengeWon() {
+    const c = challenge();
+    if (level.round > c.best) { c.best = level.round; saveChallenge(); }
+  }
+  // 过关后 advance = true：进入下一关；“换一关”：同一关号换一个 seed
+  function nextChallenge(advance) {
+    const c = challenge();
+    if (advance) c.round = level.round + 1;
+    c.seed = newSeed();
+    saveChallenge();
+    loadLevel(challengeLevel(c));
+  }
+  function startChallenge() {
+    showView('gameView');
+    resizeCanvas();
+    saveChallenge();
+    loadLevel(challengeLevel(challenge()));
+  }
+
   function showGame(i) {
     showView('gameView');
     resizeCanvas();
@@ -1377,6 +1447,7 @@
     else if (location.hash === '#create') { showView('gameView'); resizeCanvas(); startEditor(savedCustom()); }
     else if (location.hash === '#rules') showView('rulesView');
     else if (location.hash === '#demo') showDemo();
+    else if (location.hash === '#challenge') startChallenge();
     else showMenu();
   }
   document.getElementById('btnBack').onclick = () => { location.hash = ''; };
