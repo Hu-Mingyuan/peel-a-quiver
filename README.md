@@ -2,7 +2,7 @@
 
 A browser puzzle about peelable and sub-peelable quivers.
 Mutate, peel sinks and sources, and add auxiliary nodes until the quiver is empty.
-Based on Bernhard Keller's [quiver mutation applet](https://webusers.imj-prg.fr/~bernhard.keller/quivermutation/) and the paper [Ice and mirrors](https://arxiv.org/abs/2611.21484).
+Based on Bernhard Keller's [quiver mutation applet](https://webusers.imj-prg.fr/~bernhard.keller/quivermutation/) and the paper [Ice and mirrors](https://arxiv.org/abs/2611.21484). Whenever you peel a quiver, you prove a case of homological mirror symmetry!
 
 - `web/index.html`, `web/quiver.js` — the game (static files, no build step)
 - `test/test.js` — `node test/test.js`
