@@ -755,7 +755,8 @@
   // 背景线：特殊关的长条边（实线）和弧（虚线，带名字）
   function drawBg(c, bg) {
     for (const g of bg) {
-      c.strokeStyle = g.side ? '#bdbcb5' : '#d9d8d2'; c.lineWidth = g.side ? 3 : 1.5;
+      const isL = !!(g.label && g.label.startsWith('ℓ'));    // 中间的弧 ℓ 画成红色
+      c.strokeStyle = g.side ? '#bdbcb5' : isL ? '#e08a80' : '#d9d8d2'; c.lineWidth = g.side ? 3 : isL ? 2.5 : 1.5;
       c.setLineDash(g.side ? [] : [6, 5]);
       c.beginPath(); c.moveTo(g.a.x, g.a.y); c.lineTo(g.b.x, g.b.y); c.stroke();
       c.setLineDash([]);
