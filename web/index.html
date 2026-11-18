@@ -80,7 +80,7 @@
       <p><b>Moves.</b></p>
       <ul>
         <li><b>Mutate</b>: click a vertex <i>k</i> to mutate there. For each path i→k→j add an arrow i→j, reverse all arrows at <i>k</i>, then cancel 2-cycles.</li>
-        <li><b>Peel</b>: drag a sink or a source into the trash can (top right of the board) to delete it. A vertex is a <i>sink</i> if every arrow at it points in, and a <i>source</i> if every arrow at it points out; an isolated vertex is both. Sinks are blue, sources orange, isolated vertices green.</li>
+        <li><b>Peel sink/source</b>: press <b>Peel sink/source</b> and click a sink or a source, or drag it into the trash can at the bottom right of the board, to delete it. A vertex is a <i>sink</i> if every arrow at it points in, and a <i>source</i> if every arrow at it points out; an isolated vertex is both. Sinks are blue, sources orange, isolated vertices green.</li>
         <li><b>Add node</b>: click an empty spot to place a new vertex (dashed). Then, as in Keller's applet, click a source and then a target to add one arrow; adding an arrow in the opposite direction cancels one. Every arrow must touch the new vertex. Press <b>Done</b> when finished. Arrows between existing vertices cannot be changed.</li>
       </ul>
       <p><b>Controls.</b> Drag a vertex to move it. <b>Undo</b> (also Ctrl/⌘+Z) takes back one step, <b>Restart</b> resets the level, <b>← Levels</b> returns to the level list. Several parallel arrows are drawn as one arrow labelled with their number.</p>
@@ -107,6 +107,7 @@
   </div>
   <div class="toolbar" id="playToolbar">
     <button id="btnMutate" data-i18n="bMutate" class="active">Mutate</button>
+    <button id="btnPeel" data-i18n="bPeel">Peel sink/source</button>
     <button id="btnAddNode" data-i18n="bAddNode">Add node</button>
     <button id="btnDone" data-i18n="bDone">Done</button>
     <span class="sep"></span>
@@ -313,7 +314,7 @@
     back: '← 关卡',
     origin: '这个箭图的来历',
     bEVertex: '添加顶点', bEArrow: '添加箭头', bEDelete: '删除顶点', bEClear: '清空', bEStart: '开始剥',
-    bShare: '分享链接', bMutate: '突变', bAddNode: '加辅助顶点', bDone: '完成',
+    bShare: '分享链接', bMutate: '突变', bPeel: '剥汇点/源点', bAddNode: '加辅助顶点', bDone: '完成',
     bUndo: '撤销', bReset: '重来', bEdit: '编辑箭图',
     lgSink: '汇点', lgSource: '源点', lgIso: '孤立点（既是汇点也是源点）', lgAux: '辅助顶点', lgLocked: '锁住（不能突变或剥）', lgGoal: 'ℓ 上的顶点：剥掉它们就过关',
     rulesBody: `
@@ -321,7 +322,7 @@
       <p><b>操作。</b></p>
       <ul>
         <li><b>突变</b>：点击顶点 <i>k</i>，在 <i>k</i> 处突变。对每条路径 i→k→j 加一条箭头 i→j，把 <i>k</i> 处的所有箭头反向，再消去 2-圈。</li>
-        <li><b>剥</b>：把汇点或源点拖进画布右上角的垃圾桶，将它删去。一个顶点处的箭头如果全都指向它，它就是<i>汇点</i>；如果全都从它出发，就是<i>源点</i>；孤立点两者都是。汇点是蓝色，源点是橙色，孤立点是绿色。</li>
+        <li><b>剥汇点/源点</b>：按<b>剥汇点/源点</b>再点击汇点或源点，或者把它拖进画布右下角的垃圾桶，将它删去。一个顶点处的箭头如果全都指向它，它就是<i>汇点</i>；如果全都从它出发，就是<i>源点</i>；孤立点两者都是。汇点是蓝色，源点是橙色，孤立点是绿色。</li>
         <li><b>加辅助顶点</b>：点击空白处放一个新顶点（虚线）。然后像 Keller 的 applet 一样，先点起点再点终点，加一条箭头；反方向加一条会抵消一条。每条箭头都必须连到新顶点。加完后按<b>完成</b>。已有顶点之间的箭头不能改。</li>
       </ul>
       <p><b>控制。</b>拖动顶点可以移动它。<b>撤销</b>（也可按 Ctrl/⌘+Z）撤回一步，<b>重来</b>重置本关，<b>← 关卡</b>回到关卡列表。多条平行箭头画成一条，并标上条数。</p>
@@ -350,6 +351,8 @@
       placed: l => `Placed vertex ${l}. Click a source, then a target, to add an arrow (one end must be ${l}). Press "Done" when finished.`,
       mode_mutate: 'Click a vertex to mutate. Drag a vertex to move it, or into the trash can to peel it.',
       finishNode: 'Finish adding the node first: press "Done".',
+      mode_peel: 'Click a coloured vertex (sink/source) to peel it, or drag it into the trash can.',
+      hintPeel: 'Click a coloured vertex to peel it: blue is a sink, orange a source, green an isolated vertex.',
       mode_addNode: 'Click an empty spot on the canvas to place a new vertex.',
       mode_editVertex: 'Click an empty spot to add a vertex.',
       mode_editArrow: 'Click a source, then a target, to add an arrow. An arrow in the opposite direction cancels one.',
@@ -368,7 +371,7 @@
       hintStart: 'Goal: delete every vertex. You may only delete a sink (all arrows point in) or a source (all arrows point out), and here there are none. ' +
                  'Mutation changes that: in "Mutate" mode, click any vertex.',
       hintNone: 'No sink or source right now. Press "Mutate" and click a vertex.',
-      hintKind: (l, k) => `Vertex ${l} is now ${KIND_HINT.en[k]}. Drag it into the trash can at the top right to peel it.`,
+      hintKind: (l, k) => `Vertex ${l} is now ${KIND_HINT.en[k]}. Press "Peel sink/source" and click it, or drag it into the trash can at the bottom right.`,
     },
     zh: {
       level: n => `第 ${n} 关`, create: '自己造一个箭图', yourQuiver: '你的箭图', sharedQuiver: '分享的箭图',
@@ -385,6 +388,8 @@
       placed: l => `已放置顶点 ${l}。先点起点再点终点来加箭头（一端必须是 ${l}），加完后按“完成”。`,
       mode_mutate: '点击顶点进行突变。拖动顶点可以移动它，拖进垃圾桶就是剥掉它。',
       finishNode: '请先加完辅助顶点：按“完成”。',
+      mode_peel: '点击带颜色的顶点（汇点/源点）将它剥去，也可以把它拖进垃圾桶。',
+      hintPeel: '点击带颜色的顶点将它剥去：蓝色是汇点，橙色是源点，绿色是孤立点。',
       mode_addNode: '点击画布空白处放置新顶点。',
       mode_editVertex: '点击空白处添加顶点。',
       mode_editArrow: '先点起点，再点终点，添加一条箭头。反方向的箭头会抵消一条。',
@@ -401,7 +406,7 @@
       hintNoAux: '这一关不需要加顶点。按“完成”，再按“突变”。',
       hintStart: '目标：删去所有顶点。只能删汇点（所有箭头都指向它）或源点（所有箭头都从它出发），而现在一个都没有。突变可以改变这一点：在“突变”模式下点击任意顶点。',
       hintNone: '现在没有汇点或源点。按“突变”，再点击一个顶点。',
-      hintKind: (l, k) => `顶点 ${l} 现在是${KIND_HINT.zh[k]}。把它拖进右上角的垃圾桶就能剥掉它。`,
+      hintKind: (l, k) => `顶点 ${l} 现在是${KIND_HINT.zh[k]}。按“剥汇点/源点”再点击它，或者把它拖进右下角的垃圾桶。`,
     },
   };
   function tr(key, ...a) {
@@ -588,17 +593,22 @@
     const n = state.nodes[i], lab = n.label;
     const back = () => { n.x = home.x; n.y = home.y; };
     if (level.editing) { back(); return; }
-    if (state.mode !== 'mutate') { back(); message = ['finishNode']; render(); return; }
-    if (n.locked) { back(); message = ['locked', lab]; render(); return; }
+    if (state.mode !== 'mutate' && state.mode !== 'peel') { back(); message = ['finishNode']; render(); return; }
+    back();                      // 撤销时顶点回到拖动前的位置；剥不掉时也弹回去
+    peelVertex(i);
+    render();
+  }
+  // 剥掉顶点 i（点击剥和拖进垃圾桶共用）
+  function peelVertex(i) {
+    const lab = state.nodes[i].label;
+    if (state.nodes[i].locked) { message = ['locked', lab]; return; }
     const sink = Q.isSink(state.B, i), source = Q.isSource(state.B, i);
-    if (!sink && !source) { back(); message = ['notSS', lab]; render(); return; }
-    back();                      // 撤销时顶点回到拖动前的位置
+    if (!sink && !source) { message = ['notSS', lab]; return; }
     pushUndo();
     state.B = Q.deleteVertex(state.B, i);
     state.nodes.splice(i, 1);
     state.history.push(`peel ${lab}`);
     message = ['peeled', lab, sink && source ? 'isolated' : sink ? 'sink' : 'source'];
-    render();
   }
 
   function clickNode(i) {
@@ -634,6 +644,9 @@
         message = ['mutated', lab];
         break;
       }
+      case 'peel':
+        peelVertex(i);
+        break;
       case 'addNode':
         message = ['placeFirst'];
         break;
@@ -761,7 +774,7 @@
     let col = '#9a9993', fill = 'rgba(0,0,0,0)';
     if (drag && drag.moved && drag.overTrash) {
       const i = drag.idx, n = state.nodes[i];
-      const ok = state.mode === 'mutate' && !n.locked && (Q.isSink(state.B, i) || Q.isSource(state.B, i));
+      const ok = (state.mode === 'mutate' || state.mode === 'peel') && !n.locked && (Q.isSink(state.B, i) || Q.isSource(state.B, i));
       col = ok ? getVar('--both') : '#c0392b';
       fill = ok ? 'rgba(46,157,91,0.12)' : 'rgba(192,57,43,0.10)';
     }
@@ -841,9 +854,10 @@
     // 工具栏 / 状态 / 历史
     const mode = state.mode === 'addArrows' ? 'addNode' : state.mode;
     document.getElementById('btnMutate').classList.toggle('active', mode === 'mutate');
+    document.getElementById('btnPeel').classList.toggle('active', mode === 'peel');
     document.getElementById('btnAddNode').classList.toggle('active', mode === 'addNode');
     document.getElementById('btnUndo').disabled = undoStack.length === 0 || failed;
-    for (const id of ['btnMutate', 'btnAddNode', 'btnDone', 'btnEdit', 'btnShare'])
+    for (const id of ['btnMutate', 'btnPeel', 'btnAddNode', 'btnDone', 'btnEdit', 'btnShare'])
       document.getElementById(id).disabled = failed;
     document.getElementById('btnEUndo').disabled = undoStack.length === 0;
     document.getElementById('btnEVertex').classList.toggle('active', state.mode === 'editVertex');
@@ -886,6 +900,8 @@
       t = tr('hintNoAux');
     } else if (peelable.length === 0) {
       t = tr(state.history.length === 0 ? 'hintStart' : 'hintNone');
+    } else if (state.mode === 'peel') {
+      t = tr('hintPeel');
     } else {
       const i = peelable[0];
       const kind = Q.isSink(B, i) && Q.isSource(B, i) ? 'isolated' : Q.isSink(B, i) ? 'sink' : 'source';
@@ -896,8 +912,8 @@
 
   // ---------- 鼠标/触摸 ----------
   let drag = null; // { idx, sx, sy, moved, home, overTrash }
-  // 垃圾桶在画布右上角（编辑器里不显示）；放上面是因为小窗口里画布底部可能在屏幕外
-  function trashRect() { return { x: cv.clientWidth - 64, y: 12, w: 52, h: 58 }; }
+  // 垃圾桶在画布右下角（编辑器里不显示）
+  function trashRect() { return { x: cv.clientWidth - 64, y: cv.clientHeight - 70, w: 52, h: 58 }; }
   function inTrash(p) { const t = trashRect(); return p.x >= t.x - 8 && p.x <= t.x + t.w + 8 && p.y >= t.y - 8 && p.y <= t.y + t.h + 8; }
   function pt(e) { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
   function hit(p) {
@@ -937,6 +953,7 @@
 
   // ---------- 按钮 ----------
   document.getElementById('btnMutate').onclick = () => setMode('mutate');
+  document.getElementById('btnPeel').onclick = () => setMode('peel');
   document.getElementById('btnAddNode').onclick = () => setMode('addNode');
   document.getElementById('btnDone').onclick = () => setMode('mutate');
   document.getElementById('btnUndo').onclick = undo;
