@@ -95,8 +95,8 @@
 
   <section id="demoView" hidden>
     <button class="back" id="btnDemoBack" data-i18n="back">← Levels</button>
-    <h2 data-i18n="demoTitle">Paper demo: the strip for n = 7</h2>
-    <div class="hint" data-i18n="demoIntro">The proof of Proposition (strip) in Section 2 of Ice and mirrors, step by step, for SL₇ on a strip of eight triangles. Grey squares (on e₀ and e₈) are never touched; the goal is to peel the six vertices on the middle arc ℓ = e₄. Each deletion move mutates near one vertex until it becomes a sink or source, peels it, and then undoes the mutations. Press <b>Next step</b> to advance.</div>
+    <h2 data-i18n="demoTitle">Paper demo: the strip for n = 6</h2>
+    <div class="hint" data-i18n="demoIntro">The proof of Proposition (strip) in Section 2 of Ice and mirrors, step by step, for SL₆ on a strip of six triangles (N = 3). Grey squares (on e₀ and e₆) are never touched; the goal is to peel the five vertices on the middle arc ℓ = e₃. Each deletion move mutates near one vertex until it becomes a sink or source, peels it, and then undoes the mutations. Press <b>Next step</b> to advance.</div>
     <div class="toolbar">
       <button id="dPrev" data-i18n="dPrev">← Back</button>
       <button id="dNext" class="primary" data-i18n="dNext">Next step →</button>
@@ -356,8 +356,8 @@
     bEVertex: '添加顶点', bEArrow: '添加箭头', bEDelete: '删除顶点', bEClear: '清空', bEStart: '开始剥',
     bShare: '分享链接', bMutate: '突变', bPeel: '剥汇点/源点', bAddNode: '加辅助顶点', bDone: '完成',
     bUndo: '撤销', bReset: '重来', bEdit: '编辑箭图',
-    lgSink: '汇点', lgSource: '源点', lgIso: '孤立点（既是汇点也是源点）', lgAux: '辅助顶点', lgLocked: '锁住（不能突变或剥）', demoTitle: '论文演示：n = 7 的长条', dPrev: '← 上一步', dNext: '下一步 →', dNextMove: '下一个 deletion move ⏭',
-    demoIntro: 'Ice and mirrors 第二节 Proposition (strip) 的证明，对 SL₇、八个三角形的长条一步一步演示。灰色方块（e₀ 和 e₈ 上）始终不动；目标是剥掉中间弧 ℓ = e₄ 上的六个顶点。每个 deletion move 先在一个顶点附近做突变，直到它变成汇点或源点，剥掉它，再把这些突变倒回去。按<b>下一步</b>往前走。', lgGoal: 'ℓ 上的顶点：剥掉它们就过关',
+    lgSink: '汇点', lgSource: '源点', lgIso: '孤立点（既是汇点也是源点）', lgAux: '辅助顶点', lgLocked: '锁住（不能突变或剥）', demoTitle: '论文演示：n = 6 的长条', dPrev: '← 上一步', dNext: '下一步 →', dNextMove: '下一个 deletion move ⏭',
+    demoIntro: 'Ice and mirrors 第二节 Proposition (strip) 的证明，对 SL₆、六个三角形的长条（N = 3）一步一步演示。灰色方块（e₀ 和 e₆ 上）始终不动；目标是剥掉中间弧 ℓ = e₃ 上的五个顶点。每个 deletion move 先在一个顶点附近做突变，直到它变成汇点或源点，剥掉它，再把这些突变倒回去。按<b>下一步</b>往前走。', lgGoal: 'ℓ 上的顶点：剥掉它们就过关',
     rulesBody: `
       <p><b>目标。</b>把箭图剥成空箭图。</p>
       <p><b>操作。</b></p>
@@ -401,7 +401,7 @@
       canvasEmpty: 'Click anywhere to add a vertex', peeledBig: 'Peeled!',
       win: (nm, na) => `Peeled! ${nm} mutation${nm === 1 ? '' : 's'}, ${na} node${na === 1 ? '' : 's'} added.`,
       winGoal: (nm, na) => `ℓ is peeled! ${nm} mutation${nm === 1 ? '' : 's'}, ${na} node${na === 1 ? '' : 's'} added.`,
-      goalBig: 'ℓ peeled!', special: 'Special level', demoCard: 'Paper demo: n = 7',
+      goalBig: 'ℓ peeled!', special: 'Special level', demoCard: 'Paper demo: n = 6',
       dLoading: 'Loading…',
       dRound: (r, p) => `Round ${r} (p = ${p})`, dEnd: 'End',
       dLemma: { edge: 'Lemma (edge layer)', tri: 'Lemma (triangle shell)' },
@@ -412,7 +412,7 @@
       dPeel: (t, kind, none) => none ? `${t} is already a ${kind}, no mutation needed. Next: peel it.` : `${t} is now a ${kind}. Next: peel it.`,
       dUndo: (L) => `Peeled. Next: undo the ${L} mutation${L === 1 ? '' : 's'} (in reverse order).`,
       dHoverE: (e, k) => `point ${k} on e${sub(e)}`, dHoverT: (t, abc) => `point ${abc} in τ${sub(t)}`,
-      dDone: 'Done: every vertex on ℓ is peeled, and e₀, e₈ were never touched.',
+      dDone: 'Done: every vertex on ℓ is peeled, and e₀, e₆ were never touched.',
       dCount: (m, M, mu) => `Deletion move ${m} of ${M} · ${mu} mutations so far`,
       locked: l => `${l} is locked: in this level it cannot be mutated or peeled.`,
       cleared: 'Cleared.', undid: 'Undid one step.',
@@ -450,7 +450,7 @@
       canvasEmpty: '点击任意位置添加顶点', peeledBig: '剥完了！',
       win: (nm, na) => `剥完了！用了 ${nm} 次突变，加了 ${na} 个辅助顶点。`,
       winGoal: (nm, na) => `ℓ 剥完了！用了 ${nm} 次突变，加了 ${na} 个辅助顶点。`,
-      goalBig: 'ℓ 剥完了！', special: '特殊关', demoCard: '论文演示：n = 7',
+      goalBig: 'ℓ 剥完了！', special: '特殊关', demoCard: '论文演示：n = 6',
       dLoading: '加载中……',
       dRound: (r, p) => `第 ${r} 轮（p = ${p}）`, dEnd: '结束',
       dLemma: { edge: 'Lemma (edge layer)', tri: 'Lemma (triangle shell)' },
@@ -461,7 +461,7 @@
       dPeel: (t, kind, none) => none ? `${t} 本来就是${kind}，不用突变。下一步：剥掉它。` : `${t} 现在是${kind}。下一步：剥掉它。`,
       dUndo: (L) => `已剥掉。下一步：把这 ${L} 次突变倒回去（倒序）。`,
       dHoverE: (e, k) => `e${sub(e)} 上第 ${k} 个点`, dHoverT: (t, abc) => `τ${sub(t)} 内的点 ${abc}`,
-      dDone: '完成：ℓ 上的顶点全部剥掉了，e₀、e₈ 上的顶点从没动过。',
+      dDone: '完成：ℓ 上的顶点全部剥掉了，e₀、e₆ 上的顶点从没动过。',
       dCount: (m, M, mu) => `第 ${m}/${M} 个 deletion move · 已做 ${mu} 次突变`,
       locked: l => `${l} 被锁住了：本关不能突变也不能剥它。`,
       cleared: '已清空。', undid: '已撤销一步。',
@@ -1057,7 +1057,7 @@
   });
 
 
-  // ---------- 论文演示：n = 7 的长条，点一下走一步 ----------
+  // ---------- 论文演示：n = 6 的长条（N = 3），点一下走一步 ----------
   // 数据在 demo-strip.js（tools/strip_demo.py 生成），打开演示时才加载。
   const SUBS = '₀₁₂₃₄₅₆₇₈₉';
   function sub(t) { return String(t).replace(/\d/g, d => SUBS[d]); }
@@ -1165,7 +1165,7 @@
         if (Math.abs(g.a.x - g.b.x) < 1) { c.textBaseline = 'bottom'; c.fillText(label, top.x, top.y - 5); }
         else { const lx = bot.x + 0.06 * (top.x - bot.x), ly = bot.y + 0.06 * (top.y - bot.y);
                const tw = c.measureText(label).width + 6; c.fillStyle = '#fff'; c.fillRect(lx - tw / 2, ly - 8, tw, 16);
-               c.fillStyle = '#6b6b66'; c.textBaseline = 'middle'; c.fillText(label, lx, ly + 0.5); }
+               c.fillStyle = isL ? '#c0392b' : '#6b6b66'; c.textBaseline = 'middle'; c.fillText(label, lx, ly + 0.5); }
       }
     }
     const P = demo.pts, B = demo.B, A = demo.alive, r = demo.r, V = P.length;
@@ -1276,25 +1276,29 @@
       demoRender();
     });
   }
-  function drawStripThumb(canvas) {
+  function drawStripThumb(canvas) {                        // n = 6、N = 3 的长条缩略图，ℓ = e₃ 是斜的
     const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
     canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
     const c = canvas.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const x0 = 18, x1 = w - 18, y0 = h / 2 - 28, y1 = h / 2 + 28, k = 4, dx = (x1 - x0) / k;
+    const k = 3, rows = 5, x0 = 22, x1 = w - 22, y0 = h / 2 - 40, y1 = h / 2 + 40, dx = (x1 - x0) / k;
     c.strokeStyle = '#bdbcb5'; c.lineWidth = 2.5;
     c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y0); c.moveTo(x0, y1); c.lineTo(x1, y1); c.stroke();
-    c.setLineDash([4, 4]); c.lineWidth = 1.2;
-    for (let i = 0; i <= k; i++) {
-      c.strokeStyle = i === 2 ? '#e08a80' : '#cfcdc6';
-      c.beginPath(); c.moveTo(x0 + i * dx, y0); c.lineTo(x0 + i * dx, y1); c.stroke();
-      if (i < k) { c.strokeStyle = '#cfcdc6'; c.beginPath(); c.moveTo(x0 + (i + 1) * dx, y0); c.lineTo(x0 + i * dx, y1); c.stroke(); }
+    const arcs = [];
+    for (let i = 0; i <= k; i++) arcs.push({ t: x0 + i * dx, b: x0 + i * dx, e: 2 * i });
+    for (let i = 0; i < k; i++) arcs.push({ t: x0 + (i + 1) * dx, b: x0 + i * dx, e: 2 * i + 1 });
+    c.setLineDash([4, 4]);
+    for (const a of arcs) {
+      c.strokeStyle = a.e === k ? '#e08a80' : '#cfcdc6'; c.lineWidth = a.e === k ? 1.8 : 1.2;
+      c.beginPath(); c.moveTo(a.t, y0); c.lineTo(a.b, y1); c.stroke();
     }
     c.setLineDash([]);
-    for (let i = 0; i <= k; i++) for (let t = 1; t < 7; t++) {
-      const px = x0 + i * dx, py = y0 + (y1 - y0) * t / 7;
-      c.beginPath(); c.arc(px, py, 2.2, 0, 2 * Math.PI); c.fillStyle = i === 2 ? '#c0392b' : (i === 0 || i === k) ? '#9a9993' : '#1d1d1b'; c.fill();
+    for (const a of arcs) for (let t = 1; t <= rows; t++) {
+      const f = t / (rows + 1), px = a.t + (a.b - a.t) * f, py = y0 + (y1 - y0) * f;
+      c.beginPath(); c.arc(px, py, 2.3, 0, 2 * Math.PI);
+      c.fillStyle = a.e === k ? '#c0392b' : (a.e === 0 || a.e === 2 * k) ? '#9a9993' : '#1d1d1b'; c.fill();
     }
   }
+
 
   // ---------- 关卡界面 ----------
   // 每个浏览器自己记住过了哪些关；存储不可用时（隐私模式等）照常能玩，只是不显示 ✓

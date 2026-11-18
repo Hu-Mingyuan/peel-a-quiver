@@ -165,13 +165,13 @@ for (const mv of solSP) {
 assert.ok(SP.goal.every(g => !labS.includes(g)));
 assert.ok(SP.locked.every(g => labS.includes(g)));
 
-// 13. 论文演示（n=7 的长条，web/demo-strip.js）：每个 deletion move 的突变序列做完后目标是 sink/source，
+// 13. 论文演示（n=6、N=3 的长条，web/demo-strip.js）：每个 deletion move 的突变序列做完后目标是 sink/source，
 //     从不碰锁住的顶点；剥掉后倒回去；最后 ℓ 上的顶点全部剥掉
 {
   global.window = {};
   require('../web/demo-strip.js');
   const DS = global.window.DEMO_STRIP, V = DS.pos.length;
-  assert.strictEqual(V, 174);
+  assert.strictEqual(V, 95);
   let M = Array.from({ length: V }, () => new Array(V).fill(0));
   for (const [i, j, v] of DS.arrows) { M[i][j] = v; M[j][i] = 0 - v; }
   const alive = new Set(DS.pos.map((_, i) => i)), lockedD = new Set(DS.locked);
@@ -185,7 +185,7 @@ assert.ok(SP.locked.every(g => labS.includes(g)));
     for (const k of [...st.word].reverse()) { M = Q.mutate(M, k); muts++; }
   }
   assert.ok(DS.goal.every(g => !alive.has(g)));
-  assert.strictEqual(muts, 1010);
+  assert.strictEqual(muts, 428);
 }
 
 console.log('all tests passed');

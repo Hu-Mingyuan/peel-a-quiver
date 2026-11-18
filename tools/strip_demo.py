@@ -1,6 +1,6 @@
 """Deletion moves of Proposition (strip) (Section 2 of Ice and mirrors), written out for one strip.
 
-    python3 tools/strip_demo.py [n] [N] [out.js]      (default: 7 4 web/demo-strip.js)
+    python3 tools/strip_demo.py [n] [N] [out.js]      (default: 6 3 web/demo-strip.js)
 
 Builds the SL_n strip quiver of tools/fg_strip.py and follows the proof:
   round p = 0, 1, ..., floor(n/2)-1:
@@ -21,8 +21,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fg_strip import strip            # noqa: E402
 from surface import mutate            # noqa: E402
 
-n = int(sys.argv[1]) if len(sys.argv) > 1 else 7
-N = int(sys.argv[2]) if len(sys.argv) > 2 else 4
+n = int(sys.argv[1]) if len(sys.argv) > 1 else 6
+N = int(sys.argv[2]) if len(sys.argv) > 2 else 3
 OUT = sys.argv[3] if len(sys.argv) > 3 else os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'web', 'demo-strip.js')
 W = 1.6
 B0, pos, info, locked, goal, segs = strip(n, N, W)
