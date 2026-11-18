@@ -4,7 +4,6 @@
 
 web/index.html stays the single source. The build writes
   out/en/index.html, out/zh/index.html  the game with its language fixed (window.PEEL_LANG)
-  out/ch/index.html                     redirect to zh/ (alias)
   out/index.html                        redirect to the last used language, or the browser's
   out/quiver.js
 Hashes (#level-3, #q=..., #rules) are kept by every redirect, so old links keep working.
@@ -33,7 +32,6 @@ ROOT_JS = """var l = null;
 try { l = localStorage.getItem('peel-a-quiver-lang'); } catch (e) { /* storage blocked */ }
 if (l !== 'en' && l !== 'zh') l = (navigator.language || '').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en';
 location.replace(l + '/' + location.hash);"""
-CH_JS = "location.replace('../zh/' + location.hash);"
 
 
 def build(out):
@@ -50,8 +48,6 @@ def build(out):
         os.makedirs(os.path.join(out, lang))
         open(os.path.join(out, lang, 'index.html'), 'w', encoding='utf-8').write(page)
     open(os.path.join(out, 'index.html'), 'w', encoding='utf-8').write(REDIRECT.format(js=ROOT_JS, prefix=''))
-    os.makedirs(os.path.join(out, 'ch'))
-    open(os.path.join(out, 'ch', 'index.html'), 'w', encoding='utf-8').write(REDIRECT.format(js=CH_JS, prefix='../'))
 
 
 if __name__ == '__main__':
