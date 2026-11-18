@@ -137,16 +137,21 @@ const B5 = lvById('level-5').B;
 assert.strictEqual(B5.length, 11);
 assert.ok(B5.every((_, i) => !Q.isSink(B5, i) && !Q.isSource(B5, i)));
 
-// 12. 特殊关（SL_4 长条，N=2）：按论文 Proposition (strip) 的顺序做 deletion move（每次剥完再把 mutation 倒回去），
+// 12. 特殊关（SL_5 长条，N=2）：按论文 Proposition (strip) 的顺序做 deletion move（每次剥完再把 mutation 倒回去），
 //     从不 mutate 或剥锁住的顶点，最后 ℓ 上的顶点全部剥掉
 const SP = lvById('level-special');
-assert.deepStrictEqual(SP.locked, [1, 2, 3, 25, 26, 27]);
-assert.deepStrictEqual(SP.goal, [13, 14, 15]);
-const solSP = ('mu 4,mu 5,mu 7,mu 8,mu 10,peel 6,mu 10,mu 8,mu 7,mu 5,mu 4,mu 8,mu 9,mu 11,mu 12,peel 10,mu 12,' +
-  'mu 11,mu 9,mu 8,mu 9,mu 11,mu 12,mu 14,mu 15,peel 13,mu 15,mu 14,mu 12,mu 11,mu 9,mu 14,mu 16,' +
-  'mu 17,mu 19,peel 15,mu 19,mu 17,mu 16,mu 14,mu 16,mu 17,mu 19,mu 20,mu 22,peel 18,mu 22,mu 20,' +
-  'mu 19,mu 17,mu 16,mu 20,mu 21,mu 23,mu 24,peel 22,mu 24,mu 23,mu 21,mu 20,mu 11,peel 9,mu 11,' +
-  'mu 11,peel 12,mu 11,mu 17,peel 16,mu 17,mu 17,peel 19,mu 17,peel 14').split(',');
+assert.deepStrictEqual(SP.locked, [1,  2,  3,  4,  41,  42,  43,  44]);
+assert.deepStrictEqual(SP.goal, [21,  22,  23,  24]);
+const solSP = ('mu 17,mu 14,mu 11,mu 13,mu 10,mu 9,mu 7,mu 6,mu 5,peel 8,mu 5,mu 6,mu 7,mu 9,mu 10,mu 13,mu 11,' +
+  'mu 14,mu 17,mu 11,mu 14,mu 12,mu 15,mu 16,mu 18,mu 19,mu 20,peel 17,mu 20,mu 19,mu 18,mu 16,' +
+  'mu 15,mu 12,mu 14,mu 11,mu 24,mu 23,mu 22,mu 20,mu 19,mu 16,mu 18,mu 15,mu 12,peel 21,mu 12,' +
+  'mu 15,mu 18,mu 16,mu 19,mu 20,mu 22,mu 23,mu 24,mu 22,mu 23,mu 25,mu 26,mu 29,mu 27,mu 30,mu 33,' +
+  'peel 24,mu 33,mu 30,mu 27,mu 29,mu 26,mu 25,mu 23,mu 22,mu 37,mu 34,mu 31,mu 33,mu 30,mu 29,' +
+  'mu 27,mu 26,mu 25,peel 28,mu 25,mu 26,mu 27,mu 29,mu 30,mu 33,mu 31,mu 34,mu 37,mu 31,mu 34,' +
+  'mu 32,mu 35,mu 36,mu 38,mu 39,mu 40,peel 37,mu 40,mu 39,mu 38,mu 36,mu 35,mu 32,mu 34,mu 31,' +
+  'mu 18,mu 19,peel 20,mu 19,mu 18,mu 18,mu 15,peel 12,mu 15,mu 18,mu 27,mu 30,peel 33,mu 30,mu 27,' +
+  'mu 27,mu 26,peel 25,mu 26,mu 27,mu 23,mu 19,mu 16,peel 22,mu 16,mu 19,mu 23,mu 26,mu 29,peel 23,' +
+  'mu 29,mu 26').split(',');
 let BS = SP.B, labS = SP.labels.slice();
 for (const mv of solSP) {
   const [op, l] = mv.split(' '), i = labS.indexOf(Number(l));
@@ -159,5 +164,28 @@ for (const mv of solSP) {
 }
 assert.ok(SP.goal.every(g => !labS.includes(g)));
 assert.ok(SP.locked.every(g => labS.includes(g)));
+
+// 13. 论文演示（n=7 的长条，web/demo-strip.js）：每个 deletion move 的突变序列做完后目标是 sink/source，
+//     从不碰锁住的顶点；剥掉后倒回去；最后 ℓ 上的顶点全部剥掉
+{
+  global.window = {};
+  require('../web/demo-strip.js');
+  const DS = global.window.DEMO_STRIP, V = DS.pos.length;
+  assert.strictEqual(V, 174);
+  let M = Array.from({ length: V }, () => new Array(V).fill(0));
+  for (const [i, j, v] of DS.arrows) { M[i][j] = v; M[j][i] = 0 - v; }
+  const alive = new Set(DS.pos.map((_, i) => i)), lockedD = new Set(DS.locked);
+  const ss = s => [...alive].every(i => M[i][s] >= 0) || [...alive].every(i => M[i][s] <= 0);
+  let muts = 0;
+  for (const st of DS.steps) {
+    for (const k of st.word) { assert.ok(alive.has(k) && !lockedD.has(k) && k !== st.target); M = Q.mutate(M, k); muts++; }
+    assert.ok(alive.has(st.target) && !lockedD.has(st.target) && ss(st.target), `demo move at ${st.target} 不是 sink/source`);
+    for (let i = 0; i < V; i++) { M[i][st.target] = 0; M[st.target][i] = 0; }
+    alive.delete(st.target);
+    for (const k of [...st.word].reverse()) { M = Q.mutate(M, k); muts++; }
+  }
+  assert.ok(DS.goal.every(g => !alive.has(g)));
+  assert.strictEqual(muts, 1010);
+}
 
 console.log('all tests passed');

@@ -5,7 +5,7 @@
 web/index.html stays the single source. The build writes
   out/en/index.html, out/zh/index.html  the game with its language fixed (window.PEEL_LANG)
   out/index.html                        redirect to the last used language, or the browser's
-  out/quiver.js
+  out/*.js (quiver.js; demo-strip.js is loaded from ../ when the demo opens)
 Hashes (#level-3, #q=..., #rules) are kept by every redirect, so old links keep working.
 """
 import os
@@ -41,7 +41,9 @@ def build(out):
     if os.path.isdir(out):
         shutil.rmtree(out)
     os.makedirs(out)
-    shutil.copy(os.path.join(ROOT, 'web', 'quiver.js'), os.path.join(out, 'quiver.js'))
+    for f in os.listdir(os.path.join(ROOT, 'web')):          # quiver.js, demo-strip.js, ...
+        if f.endswith('.js'):
+            shutil.copy(os.path.join(ROOT, 'web', f), os.path.join(out, f))
     for lang, html_lang in (('en', 'en'), ('zh', 'zh-CN')):
         page = src.replace(tag, f"<script>window.PEEL_LANG = '{lang}';</script>\n<script src=\"../quiver.js\"></script>")
         page = page.replace('<html lang="en">', f'<html lang="{html_lang}">')

@@ -59,6 +59,10 @@
   .share input { flex: 1; min-width: 0; font: 13px ui-monospace, Menlo, Consolas, monospace; padding: 5px 8px;
                  border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--fg); }
   .credit a { color: inherit; }
+  #dcv { height: 420px; }
+  .dcaption { min-height: 3em; margin: 4px 0 8px; }
+  .dcaption .sub { color: var(--muted); font-size: 13px; margin: 0; }
+  #dHover { color: var(--muted); font-size: 13px; min-height: 1.5em; margin: 6px 0 0; }
 </style>
 </head>
 <body>
@@ -87,6 +91,22 @@
       <p><b>Create your own.</b> The last card on the level list opens an editor. Click an empty spot to add a vertex, use <b>Add arrow</b> to connect vertices (click a source, then a target; an arrow in the opposite direction cancels one), and <b>Delete vertex</b> to remove one. Press <b>Start peeling</b> to play your quiver with the same rules, and <b>Edit quiver</b> to go back to the editor. <b>Share link</b> gives a link that opens your quiver for anyone.</p>
       <p><b>When is a level solvable?</b> Exactly when its quiver is <i>sub-peelable</i>, i.e. a full subquiver of a quiver that can be peeled using mutations and sink/source removals alone (a <i>peelable</i> quiver). Without adding nodes, a level is solvable exactly when its quiver is peelable.</p>
     </div>
+  </section>
+
+  <section id="demoView" hidden>
+    <button class="back" id="btnDemoBack" data-i18n="back">← Levels</button>
+    <h2 data-i18n="demoTitle">Paper demo: the strip for n = 7</h2>
+    <div class="hint" data-i18n="demoIntro">The proof of Proposition (strip) in Section 2 of Ice and mirrors, step by step, for SL₇ on a strip of eight triangles. Grey squares (on e₀ and e₈) are never touched; the goal is to peel the six vertices on the middle arc ℓ = e₄. Each deletion move mutates near one vertex until it becomes a sink or source, peels it, and then undoes the mutations. Press <b>Next step</b> to advance.</div>
+    <div class="toolbar">
+      <button id="dPrev" data-i18n="dPrev">← Back</button>
+      <button id="dNext" class="primary" data-i18n="dNext">Next step →</button>
+      <button id="dNextMove" data-i18n="dNextMove">Next deletion move ⏭</button>
+      <span class="sep"></span>
+      <span id="dRounds" class="toolbar" style="margin:0"></span>
+    </div>
+    <div class="dcaption" id="dCaption"></div>
+    <div class="canvas-wrap"><canvas id="dcv"></canvas></div>
+    <p id="dHover"></p>
   </section>
 
   <section id="gameView" hidden>
@@ -240,46 +260,63 @@
       B: [[0, 2, -2], [-2, 0, 2], [2, -2, 0]],
     },
     {
-      // 特殊关：论文第二节 Proposition (strip)，SL_4、N=2 的长条；由 tools/fg_strip.py 的 strip(4, 2) 生成，
+      // 特殊关：论文第二节 Proposition (strip)，SL_5、N=2 的长条；由 tools/fg_strip.py 的 strip(5, 2) 生成，
       // 顶点按从左到右编号。两端弧 e_0、e_4 上的顶点锁住（不能 mutate、不能剥），剥掉中间弧 ℓ=e_2 上的顶点就过关。
       id: 'level-special',
       titleKey: 'special',
-      origin: 'The Fock–Goncharov quiver for SL₄ on a strip cut into four triangles by the arcs e₀, …, e₄. It comes from the proof in Section 2 of Ice and mirrors: cutting a surface along the middle arc ℓ = e₂ gives a simpler surface, and the proof peels the vertices on ℓ without touching the end arcs, which are glued to the rest of the surface. The vertices on the two long sides of the strip are frozen and left out.',
-      originZh: 'SL₄ 的 Fock–Goncharov 箭图，曲面是一条长条，被弧 e₀, …, e₄ 分成四个三角形。它来自 Ice and mirrors 第二节的证明：沿中间的弧 ℓ = e₂ 切开，曲面就变简单了；证明在不碰两端弧（它们连着曲面的其余部分）的情况下剥掉 ℓ 上的顶点。长条两条长边上的顶点是冻结的，这里去掉了。',
-      note: 'Special rules for this level: the grey square vertices lie on the end arcs e₀ and e₄ and are locked — they cannot be mutated or peeled. You win once the three vertices on the middle arc ℓ = e₂ (red rings) are peeled; the other vertices may stay.',
-      noteZh: '本关特殊规则：灰色方块顶点在两端的弧 e₀ 和 e₄ 上，被锁住了，不能突变也不能剥。把中间弧 ℓ = e₂ 上的三个顶点（红圈）都剥掉就过关，其他顶点可以留着。',
-      labels: [1,  2,  3,  4,  5,  6,  7,  8,  9,  10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27],
-      locked: [1,  2,  3,  25,  26,  27],
-      goal: [13,  14,  15],
-      pos: [[0.0,  0.75],  [0.0,  0.5],  [0.0,  0.25],  [0.4,  0.75],  [0.4,  0.5],  [0.4,  0.25],  [0.8,  0.75],  [0.8,  0.5],  [0.8,  0.25],  [1.2,  0.75],  [1.2,  0.5],  [1.2,  0.25],  [1.6,  0.75],  [1.6,  0.5],  [1.6,  0.25],  [2.0,  0.75],  [2.0,  0.5],  [2.0,  0.25],  [2.4,  0.75],  [2.4,  0.5],  [2.4,  0.25],  [2.8,  0.75],  [2.8,  0.5],  [2.8,  0.25],  [3.2,  0.75],  [3.2,  0.5],  [3.2,  0.25]],
+      origin: 'The Fock–Goncharov quiver for SL₅ on a strip cut into four triangles by the arcs e₀, …, e₄. It comes from the proof in Section 2 of Ice and mirrors: cutting a surface along the middle arc ℓ = e₂ gives a simpler surface, and the proof peels the vertices on ℓ without touching the end arcs, which are glued to the rest of the surface. The vertices on the two long sides of the strip are frozen and left out.',
+      originZh: 'SL₅ 的 Fock–Goncharov 箭图，曲面是一条长条，被弧 e₀, …, e₄ 分成四个三角形。它来自 Ice and mirrors 第二节的证明：沿中间的弧 ℓ = e₂ 切开，曲面就变简单了；证明在不碰两端弧（它们连着曲面的其余部分）的情况下剥掉 ℓ 上的顶点。长条两条长边上的顶点是冻结的，这里去掉了。',
+      note: 'Special rules for this level: the grey square vertices lie on the end arcs e₀ and e₄ and are locked — they cannot be mutated or peeled. You win once the four vertices on the middle arc ℓ = e₂ (red rings) are peeled; the other vertices may stay.',
+      noteZh: '本关特殊规则：灰色方块顶点在两端的弧 e₀ 和 e₄ 上，被锁住了，不能突变也不能剥。把中间弧 ℓ = e₂ 上的四个顶点（红圈）都剥掉就过关，其他顶点可以留着。',
+      labels: [1,  2,  3,  4,  5,  6,  7,  8,  9,  10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,  32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44],
+      locked: [1,  2,  3,  4,  41,  42,  43,  44],
+      goal: [21,  22,  23,  24],
+      pos: [[0.0,  0.8],  [0.0,  0.6],  [0.0,  0.4],  [0.0,  0.2],  [0.32,  0.8],  [0.32,  0.6],  [0.32,  0.4],  [0.32,  0.2],  [0.64,  0.8],  [0.64,  0.6],  [0.64,  0.4],  [0.64,  0.2],  [0.96,  0.8],  [0.96,  0.6],  [0.96,  0.4],  [0.96,  0.2],  [1.28,  0.8],  [1.28,  0.6],  [1.28,  0.4],  [1.28,  0.2],  [1.6,  0.8],  [1.6,  0.6],  [1.6,  0.4],  [1.6,  0.2],  [1.92,  0.8],  [1.92,  0.6],  [1.92,  0.4],  [1.92,  0.2],  [2.24,  0.8],  [2.24,  0.6],  [2.24,  0.4],  [2.24,  0.2],  [2.56,  0.8],  [2.56,  0.6],  [2.56,  0.4],  [2.56,  0.2],  [2.88,  0.8],  [2.88,  0.6],  [2.88,  0.4],  [2.88,  0.2],  [3.2,  0.8],  [3.2,  0.6],  [3.2,  0.4],  [3.2,  0.2]],
       bg: [{"a":  [0,  1],  "b":  [3.2,  1],  "side":  true},  {"a":  [0,  0],  "b":  [3.2,  0],  "side":  true},  {"a":  [0.0,  1],  "b":  [0.0,  0],  "label":  "e₀"},  {"a":  [1.6,  1],  "b":  [1.6,  0],  "label":  "ℓ = e₂"},  {"a":  [3.2,  1],  "b":  [3.2,  0],  "label":  "e₄"},  {"a":  [1.6,  1],  "b":  [0.0,  0],  "label":  "e₁"},  {"a":  [3.2,  1],  "b":  [1.6,  0],  "label":  "e₃"}],
-      B: [[0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [-1,  1,  0,  0,  -1,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  -1,  1,  1,  0,  -1,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  -1,  0,  1,  0,  0,  0,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  -1,  1,  0,  0,  -1,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  -1,  0,  1,  0,  1,  0,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  1,  0,  -1,  0,  0,  1,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  -1,  0,  0,  0,  1,  0,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  1,  -1,  -1,  0,  1,  1,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  -1,  0,  0,  1,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  1,  0,  0,  -1,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  1,  1,  0,  -1,  -1,  1,  0,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  0,  1,  0,  0,  0,  -1,  0,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  1,  0,  0,  -1,  0,  1,  0,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  0,  1,  0,  1,  0,  -1,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  -1,  0,  0,  1,  -1,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  0,  0,  0,  1,  0,  -1,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  -1,  0,  1,  1,  -1,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  -1,  0,  0,  1,  -1],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0],
-          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0]],
+      B: [[0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [-1,  1,  0,  0,  0,  -1,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  -1,  1,  0,  1,  0,  -1,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  -1,  1,  0,  1,  0,  -1,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  -1,  0,  0,  1,  0,  0,  0,  0,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  -1,  1,  0,  0,  0,  -1,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  -1,  1,  0,  1,  0,  -1,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  -1,  0,  0,  1,  0,  1,  0,  0,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  -1,  0,  0,  0,  1,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  -1,  1,  0,  0,  0,  -1,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  0,  0,  1,  0,  1,  0,  0,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  -1,  0,  1,  0,  1,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  -1,  0,  0,  0,  1,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  0,  0,  0,  0,  1,  0,  0,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  -1,  0,  1,  0,  1,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  -1,  0,  1,  0,  1,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  -1,  0,  0,  0,  1,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  1,  0,  0,  0,  -1,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  1,  0,  1,  0,  -1,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  1,  0,  1,  0,  -1,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  0,  0,  1,  0,  0,  0,  0,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  1,  0,  0,  0,  -1,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  1,  0,  1,  0,  -1,  0,  -1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  0,  0,  1,  0,  1,  0,  0,  -1,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  -1,  0,  0,  0,  1,  -1,  0,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  1,  0,  0,  0,  -1,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  0,  0,  1,  0,  1,  0,  0,  -1,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  -1,  0,  1,  0,  1,  -1,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  -1,  0,  0,  0,  1,  -1,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  -1,  0,  0,  0,  0,  1,  0,  0,  -1,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  -1,  0,  1,  0,  1,  -1,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  -1,  0,  1,  0,  1,  -1,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  -1,  0,  0,  0,  1,  -1],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  -1,  0,  0,  0,  0],
+          [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0]],
     },
   ];
 
@@ -319,7 +356,8 @@
     bEVertex: '添加顶点', bEArrow: '添加箭头', bEDelete: '删除顶点', bEClear: '清空', bEStart: '开始剥',
     bShare: '分享链接', bMutate: '突变', bPeel: '剥汇点/源点', bAddNode: '加辅助顶点', bDone: '完成',
     bUndo: '撤销', bReset: '重来', bEdit: '编辑箭图',
-    lgSink: '汇点', lgSource: '源点', lgIso: '孤立点（既是汇点也是源点）', lgAux: '辅助顶点', lgLocked: '锁住（不能突变或剥）', lgGoal: 'ℓ 上的顶点：剥掉它们就过关',
+    lgSink: '汇点', lgSource: '源点', lgIso: '孤立点（既是汇点也是源点）', lgAux: '辅助顶点', lgLocked: '锁住（不能突变或剥）', demoTitle: '论文演示：n = 7 的长条', dPrev: '← 上一步', dNext: '下一步 →', dNextMove: '下一个 deletion move ⏭',
+    demoIntro: 'Ice and mirrors 第二节 Proposition (strip) 的证明，对 SL₇、八个三角形的长条一步一步演示。灰色方块（e₀ 和 e₈ 上）始终不动；目标是剥掉中间弧 ℓ = e₄ 上的六个顶点。每个 deletion move 先在一个顶点附近做突变，直到它变成汇点或源点，剥掉它，再把这些突变倒回去。按<b>下一步</b>往前走。', lgGoal: 'ℓ 上的顶点：剥掉它们就过关',
     rulesBody: `
       <p><b>目标。</b>把箭图剥成空箭图。</p>
       <p><b>操作。</b></p>
@@ -363,7 +401,19 @@
       canvasEmpty: 'Click anywhere to add a vertex', peeledBig: 'Peeled!',
       win: (nm, na) => `Peeled! ${nm} mutation${nm === 1 ? '' : 's'}, ${na} node${na === 1 ? '' : 's'} added.`,
       winGoal: (nm, na) => `ℓ is peeled! ${nm} mutation${nm === 1 ? '' : 's'}, ${na} node${na === 1 ? '' : 's'} added.`,
-      goalBig: 'ℓ peeled!', special: 'Special level',
+      goalBig: 'ℓ peeled!', special: 'Special level', demoCard: 'Paper demo: n = 7',
+      dLoading: 'Loading…',
+      dRound: (r, p) => `Round ${r} (p = ${p})`, dEnd: 'End',
+      dLemma: { edge: 'Lemma (edge layer)', tri: 'Lemma (triangle shell)' },
+      dWhere: (w) => w[0] === 'e' ? `common edge e${sub(w.slice(1))}` : `triangle τ${sub(w.slice(1))}`,
+      dHead: (r, p, lem, wh, t) => `Round ${r} (p = ${p}) · ${lem} · ${wh} · delete ${t} (red ring)`,
+      dStart: 'Start. Press “Next step”.',
+      dMu: (i, L, name) => `Next (${i}/${L}): mutate at ${name}.`,
+      dPeel: (t, kind, none) => none ? `${t} is already a ${kind}, no mutation needed. Next: peel it.` : `${t} is now a ${kind}. Next: peel it.`,
+      dUndo: (L) => `Peeled. Next: undo the ${L} mutation${L === 1 ? '' : 's'} (in reverse order).`,
+      dHoverE: (e, k) => `point ${k} on e${sub(e)}`, dHoverT: (t, abc) => `point ${abc} in τ${sub(t)}`,
+      dDone: 'Done: every vertex on ℓ is peeled, and e₀, e₈ were never touched.',
+      dCount: (m, M, mu) => `Deletion move ${m} of ${M} · ${mu} mutations so far`,
       locked: l => `${l} is locked: in this level it cannot be mutated or peeled.`,
       cleared: 'Cleared.', undid: 'Undid one step.',
       overflow: l => `Mutating at ${l} makes an arrow multiplicity too large to count exactly (over 2⁵³ ≈ 9×10¹⁵), so we call it ∞. Failed. Press Restart to try again.`,
@@ -400,7 +450,19 @@
       canvasEmpty: '点击任意位置添加顶点', peeledBig: '剥完了！',
       win: (nm, na) => `剥完了！用了 ${nm} 次突变，加了 ${na} 个辅助顶点。`,
       winGoal: (nm, na) => `ℓ 剥完了！用了 ${nm} 次突变，加了 ${na} 个辅助顶点。`,
-      goalBig: 'ℓ 剥完了！', special: '特殊关',
+      goalBig: 'ℓ 剥完了！', special: '特殊关', demoCard: '论文演示：n = 7',
+      dLoading: '加载中……',
+      dRound: (r, p) => `第 ${r} 轮（p = ${p}）`, dEnd: '结束',
+      dLemma: { edge: 'Lemma (edge layer)', tri: 'Lemma (triangle shell)' },
+      dWhere: (w) => w[0] === 'e' ? `公共边 e${sub(w.slice(1))}` : `三角形 τ${sub(w.slice(1))}`,
+      dHead: (r, p, lem, wh, t) => `第 ${r} 轮（p = ${p}）· ${lem} · ${wh} · 删 ${t}（红圈）`,
+      dStart: '开始。按“下一步”。',
+      dMu: (i, L, name) => `下一步（${i}/${L}）：在 ${name} 处突变。`,
+      dPeel: (t, kind, none) => none ? `${t} 本来就是${kind}，不用突变。下一步：剥掉它。` : `${t} 现在是${kind}。下一步：剥掉它。`,
+      dUndo: (L) => `已剥掉。下一步：把这 ${L} 次突变倒回去（倒序）。`,
+      dHoverE: (e, k) => `e${sub(e)} 上第 ${k} 个点`, dHoverT: (t, abc) => `τ${sub(t)} 内的点 ${abc}`,
+      dDone: '完成：ℓ 上的顶点全部剥掉了，e₀、e₈ 上的顶点从没动过。',
+      dCount: (m, M, mu) => `第 ${m}/${M} 个 deletion move · 已做 ${mu} 次突变`,
       locked: l => `${l} 被锁住了：本关不能突变也不能剥它。`,
       cleared: '已清空。', undid: '已撤销一步。',
       overflow: l => `在 ${l} 处突变会让箭头重数大到无法精确计数（超过 2⁵³ ≈ 9×10¹⁵），记作 ∞。失败！按“重来”重新开始。`,
@@ -428,6 +490,7 @@
     // 关卡里的 Rules 折叠块和规则页用同一份内容
     document.getElementById('rulesInGame').innerHTML = document.querySelector('#rulesView .rules').innerHTML;
     if (!document.getElementById('menuView').hidden) showMenu();
+    if (!document.getElementById('demoView').hidden && demo.data) demoRender();
     if (!document.getElementById('gameView').hidden && state) {
       document.getElementById('levelTitle').textContent = levelTitle(level);
       document.getElementById('originText').textContent = (lang === 'zh' && level.originZh) || level.origin || '';
@@ -993,6 +1056,243 @@
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
   });
 
+
+  // ---------- 论文演示：n = 7 的长条，点一下走一步 ----------
+  // 数据在 demo-strip.js（tools/strip_demo.py 生成），打开演示时才加载。
+  const SUBS = '₀₁₂₃₄₅₆₇₈₉';
+  function sub(t) { return String(t).replace(/\d/g, d => SUBS[d]); }
+  function paperName(nm) { return nm.replace(/^([DX])([\d,]+)(′?)$/, (_, L, ix, pr) => L + sub(ix) + pr); }
+  const dcv = document.getElementById('dcv'), dctx = dcv.getContext('2d');
+  const demo = { data: null, steps: null, idx: 0, B: null, alive: null, snaps: {}, hover: -1, pts: null, bg: null };
+
+  function ensureDemoData(cb) {
+    if (window.DEMO_STRIP) { cb(); return; }
+    const sc = document.createElement('script');
+    sc.src = (FIXED_LANG ? '../' : '') + 'demo-strip.js';
+    sc.onload = cb;
+    document.head.appendChild(sc);
+  }
+  function demoBuild() {
+    const D = window.DEMO_STRIP, V = D.pos.length;
+    const st = [], moveStart = [], roundStart = {}, muBefore = [];
+    let mu = 0;
+    D.steps.forEach((m, mi) => {
+      moveStart[mi] = st.length;
+      if (!(m.round in roundStart)) roundStart[m.round] = st.length;
+      m.word.forEach((k, i) => { st.push({ type: 'mu', move: mi, i, k }); });
+      st.push({ type: 'peel', move: mi });
+      if (m.word.length) st.push({ type: 'undo', move: mi });
+    });
+    st.forEach((x, i) => { muBefore[i] = mu; mu += x.type === 'mu' ? 1 : x.type === 'undo' ? D.steps[x.move].word.length : 0; });
+    muBefore[st.length] = mu;
+    const B = Array.from({ length: V }, () => new Array(V).fill(0));
+    for (const [i, j, v] of D.arrows) { B[i][j] = v; B[j][i] = 0 - v; }
+    Object.assign(demo, { data: D, steps: st, moveStart, roundStart, muBefore, B0: B, locked: new Set(D.locked), goal: new Set(D.goal) });
+    demo.idx = 0; demo.B = clone(B); demo.alive = new Array(V).fill(true); demo.snaps = { 0: { B: clone(B), alive: demo.alive.slice() } };
+    const rb = document.getElementById('dRounds'); rb.innerHTML = '';
+    for (const r of Object.keys(roundStart)) {
+      const b = document.createElement('button'); b.dataset.round = r; b.onclick = () => demoGo(roundStart[r]); rb.appendChild(b);
+    }
+    const e = document.createElement('button'); e.dataset.round = 'end'; e.onclick = () => demoGo(st.length); rb.appendChild(e);
+  }
+  function demoApply(x) {
+    const m = demo.data.steps[x.move];
+    if (x.type === 'mu') demo.B = Q.mutate(demo.B, x.k);
+    else if (x.type === 'peel') {
+      const s = m.target;
+      for (let i = 0; i < demo.B.length; i++) { demo.B[i][s] = 0; demo.B[s][i] = 0; }
+      demo.alive[s] = false;
+    } else for (let i = m.word.length - 1; i >= 0; i--) demo.B = Q.mutate(demo.B, m.word[i]);
+  }
+  // 跳到第 idx 步之后的局面：往前直接算，往回从最近的快照（每个 deletion move 开头存一份）重算
+  function demoGo(idx) {
+    idx = Math.max(0, Math.min(demo.steps.length, idx));
+    if (idx < demo.idx) {
+      let k = idx; while (!(k in demo.snaps)) k--;
+      demo.B = clone(demo.snaps[k].B); demo.alive = demo.snaps[k].alive.slice(); demo.idx = k;
+    }
+    while (demo.idx < idx) {
+      demoApply(demo.steps[demo.idx]);
+      demo.idx++;
+      const nx = demo.steps[demo.idx];
+      if (nx && demo.moveStart[nx.move] === demo.idx && !(demo.idx in demo.snaps))
+        demo.snaps[demo.idx] = { B: clone(demo.B), alive: demo.alive.slice() };
+    }
+    demoRender();
+  }
+  function demoNextMove() {
+    const x = demo.steps[demo.idx];
+    if (!x) return;
+    const nextStart = demo.moveStart[x.move + 1];
+    demoGo(nextStart === undefined ? demo.steps.length : nextStart);
+  }
+  function demoResize() {
+    const dpr = window.devicePixelRatio || 1;
+    dcv.width = Math.round(dcv.clientWidth * dpr); dcv.height = Math.round(dcv.clientHeight * dpr);
+    dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const D = demo.data; if (!D) return;
+    const all = layout(D.pos.concat(D.bg.flatMap(g => [g.a, g.b])), dcv.clientWidth, dcv.clientHeight, 34);
+    demo.pts = all.slice(0, D.pos.length);
+    demo.bg = D.bg.map((g, k) => ({ a: all[D.pos.length + 2 * k], b: all[D.pos.length + 2 * k + 1], ga: g.a, gb: g.b }));
+    const ys = D.pos.map(p => p[1]);
+    demo.scale = (demo.pts[0].x - demo.pts[1].x) || 1;
+    const unit = Math.abs(all[D.pos.length].x - all[D.pos.length + 1].x) / (D.N * D.W) || 1;   // 像素 / 单位长度
+    demo.r = Math.max(3, Math.min(9, unit / D.n * 0.36));
+  }
+  function demoRender() {
+    const D = demo.data, c = dctx, w = dcv.clientWidth, h = dcv.clientHeight;
+    if (!D) return;
+    c.clearRect(0, 0, w, h);
+    const st = demo.steps, x = st[demo.idx], m = x ? D.steps[x.move] : null;
+    // 背景：长条和弧；竖弧 e_{2i} 名字在上方，斜弧 e_{2i+1} 名字在斜线上
+    for (const g of demo.bg) {
+      const side = g.ga[1] === g.gb[1];
+      let label = '', isL = false;
+      if (!side) {
+        const xt = g.ga[1] > g.gb[1] ? g.ga[0] : g.gb[0], xb = g.ga[1] > g.gb[1] ? g.gb[0] : g.ga[0];
+        const e = Math.abs(xt - xb) < 1e-6 ? 2 * Math.round(xt / D.W) : 2 * Math.round(xb / D.W) + 1;
+        isL = e === D.N; label = isL ? 'ℓ = e' + sub(e) : 'e' + sub(e);
+      }
+      c.strokeStyle = side ? '#bdbcb5' : isL ? '#e08a80' : '#dedcd5'; c.lineWidth = side ? 3 : isL ? 2.2 : 1.2;
+      c.setLineDash(side ? [] : [5, 5]); c.beginPath(); c.moveTo(g.a.x, g.a.y); c.lineTo(g.b.x, g.b.y); c.stroke(); c.setLineDash([]);
+      if (label) {
+        const top = g.a.y < g.b.y ? g.a : g.b, bot = g.a.y < g.b.y ? g.b : g.a;
+        c.font = '600 12px -apple-system, Arial, sans-serif'; c.textAlign = 'center';
+        c.fillStyle = isL ? '#c0392b' : '#6b6b66';
+        if (Math.abs(g.a.x - g.b.x) < 1) { c.textBaseline = 'bottom'; c.fillText(label, top.x, top.y - 5); }
+        else { const lx = bot.x + 0.06 * (top.x - bot.x), ly = bot.y + 0.06 * (top.y - bot.y);
+               const tw = c.measureText(label).width + 6; c.fillStyle = '#fff'; c.fillRect(lx - tw / 2, ly - 8, tw, 16);
+               c.fillStyle = '#6b6b66'; c.textBaseline = 'middle'; c.fillText(label, lx, ly + 0.5); }
+      }
+    }
+    const P = demo.pts, B = demo.B, A = demo.alive, r = demo.r, V = P.length;
+    const s = m ? m.target : -1;
+    // 箭头：和当前目标相连的画深色，其余很淡
+    for (let i = 0; i < V; i++) if (A[i]) for (let j = i + 1; j < V; j++) if (A[j] && B[i][j]) {
+      const hot = i === s || j === s;
+      const [u, v] = B[i][j] > 0 ? [i, j] : [j, i];
+      const a = P[u], b = P[v], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;
+      const sx = a.x + ux * r, sy = a.y + uy * r, ex = b.x - ux * (r + 1), ey = b.y - uy * (r + 1);
+      c.strokeStyle = c.fillStyle = hot ? '#1d1d1b' : '#c4c3bc'; c.lineWidth = hot ? 1.8 : 1;
+      c.beginPath(); c.moveTo(sx, sy); c.lineTo(ex, ey); c.stroke();
+      const hl = hot ? 8 : 5, hw = hot ? 3.5 : 2.4;
+      c.beginPath(); c.moveTo(ex, ey); c.lineTo(ex - ux * hl - uy * hw, ey - uy * hl + ux * hw); c.lineTo(ex - ux * hl + uy * hw, ey - uy * hl - ux * hw); c.closePath(); c.fill();
+      if (Math.abs(B[i][j]) > 1) { c.font = '600 10px -apple-system, Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(String(Math.abs(B[i][j])), (a.x + b.x) / 2 + 6, (a.y + b.y) / 2 - 6); }
+    }
+    // 当前 deletion move 的突变序列：已做过的浅紫，下一个深紫，标上次序
+    const order = new Map();
+    if (m && x.type === 'mu') m.word.forEach((k, i) => order.set(k, i));
+    for (let i = 0; i < V; i++) {
+      const p = P[i];
+      if (!A[i]) {          // 已剥掉：淡色虚线圈
+        c.beginPath(); c.arc(p.x, p.y, r * 0.8, 0, 2 * Math.PI); c.setLineDash([2, 2]);
+        c.strokeStyle = '#d0cfc8'; c.lineWidth = 1; c.stroke(); c.setLineDash([]); continue;
+      }
+      let fill = '#fff';
+      if (order.has(i)) fill = order.get(i) < x.i ? '#e4d8f5' : order.get(i) === x.i ? getVar('--aux') : '#fff';
+      if (i === s && (Q.isSink(B, i) || Q.isSource(B, i)))
+        fill = Q.isSink(B, i) && Q.isSource(B, i) ? getVar('--both') : Q.isSink(B, i) ? getVar('--sink') : getVar('--source');
+      c.beginPath();
+      if (demo.locked.has(i)) c.rect(p.x - r, p.y - r, 2 * r, 2 * r); else c.arc(p.x, p.y, r, 0, 2 * Math.PI);
+      c.fillStyle = demo.locked.has(i) ? '#d9d8d2' : fill; c.fill();
+      c.strokeStyle = '#1d1d1b'; c.lineWidth = 1.2; c.stroke();
+      if (i === s) { c.beginPath(); c.arc(p.x, p.y, r + 4, 0, 2 * Math.PI); c.strokeStyle = '#c0392b'; c.lineWidth = 2.5; c.stroke(); }
+      else if (demo.goal.has(i)) { c.beginPath(); c.arc(p.x, p.y, r + 2.5, 0, 2 * Math.PI); c.strokeStyle = '#e08a80'; c.lineWidth = 1.3; c.stroke(); }
+      if (order.has(i) && order.get(i) >= x.i) {
+        c.fillStyle = '#5b3a9a'; c.font = '600 10px -apple-system, Arial, sans-serif'; c.textAlign = 'left'; c.textBaseline = 'bottom';
+        c.fillText(String(order.get(i) + 1), p.x + r - 1, p.y - r + 1);
+      }
+    }
+    // 说明
+    const cap = document.getElementById('dCaption');
+    if (!x) {
+      cap.innerHTML = '';
+      const a = document.createElement('div'); a.textContent = tr('dDone'); a.style.fontWeight = '600'; a.style.color = getVar('--both');
+      const b = document.createElement('p'); b.className = 'sub'; b.textContent = tr('dCount', D.steps.length, D.steps.length, demo.muBefore[st.length]);
+      cap.append(a, b);
+    } else {
+      const lem = TEXT[lang].dLemma[m.lemma], wh = tr('dWhere', m.where), tn = paperName(m.tname);
+      let line;
+      if (x.type === 'mu') line = tr('dMu', x.i + 1, m.word.length, paperName(m.wnames[x.i]));
+      else if (x.type === 'peel') {
+        const kind = Q.isSink(B, s) && Q.isSource(B, s) ? 'isolated' : Q.isSink(B, s) ? 'sink' : 'source';
+        line = tr('dPeel', tn, KIND[lang][kind], m.word.length === 0);
+      } else line = tr('dUndo', m.word.length);
+      cap.innerHTML = '';
+      const a = document.createElement('div'); a.textContent = tr('dHead', m.round, m.round - 1, lem, wh, tn); a.style.fontWeight = '600';
+      const b = document.createElement('div'); b.textContent = demo.idx === 0 ? tr('dStart') + ' ' + line : line;
+      const c2 = document.createElement('p'); c2.className = 'sub'; c2.textContent = tr('dCount', x.move + 1, D.steps.length, demo.muBefore[demo.idx]);
+      cap.append(a, b, c2);
+    }
+    document.getElementById('dPrev').disabled = demo.idx === 0;
+    document.getElementById('dNext').disabled = document.getElementById('dNextMove').disabled = demo.idx >= st.length;
+    for (const b of document.querySelectorAll('#dRounds button')) {
+      const rr = b.dataset.round;
+      b.textContent = rr === 'end' ? tr('dEnd') : tr('dRound', rr, rr - 1);
+      const startI = rr === 'end' ? st.length : demo.roundStart[rr];
+      b.classList.toggle('active', rr === 'end' ? demo.idx >= st.length : (x && x.move !== undefined && D.steps[x.move].round === Number(rr)));
+    }
+    demoHoverText();
+  }
+  function demoHoverText() {
+    const el = document.getElementById('dHover'), i = demo.hover, D = demo.data;
+    if (!D || i < 0) { el.textContent = ''; return; }
+    const nm = D.names[i];
+    let t = nm[0] === 'e' ? tr('dHoverE', nm.slice(1, nm.indexOf(',')), nm.slice(nm.indexOf(',') + 2))
+                          : tr('dHoverT', nm.slice(1, nm.indexOf(' ')), nm.slice(nm.indexOf(' ') + 1));
+    const x = demo.steps[demo.idx], m = x ? D.steps[x.move] : null;
+    if (m) {
+      if (m.target === i) t += ' = ' + paperName(m.tname);
+      const k = m.word.indexOf(i); if (k >= 0) t += ' = ' + paperName(m.wnames[k]);
+    }
+    el.textContent = t;
+  }
+  dcv.addEventListener('pointermove', e => {
+    if (!demo.data) return;
+    const rc = dcv.getBoundingClientRect(), px = e.clientX - rc.left, py = e.clientY - rc.top;
+    let best = -1, bd = demo.r + 4;
+    demo.pts.forEach((p, i) => { const d = Math.hypot(p.x - px, p.y - py); if (d <= bd) { bd = d; best = i; } });
+    if (best !== demo.hover) { demo.hover = best; demoHoverText(); }
+  });
+  document.getElementById('dNext').onclick = () => demoGo(demo.idx + 1);
+  document.getElementById('dPrev').onclick = () => demoGo(demo.idx - 1);
+  document.getElementById('dNextMove').onclick = demoNextMove;
+  document.getElementById('btnDemoBack').onclick = () => { location.hash = ''; };
+  document.addEventListener('keydown', e => {
+    if (document.getElementById('demoView').hidden || !demo.data) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); demoGo(demo.idx + 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); demoGo(demo.idx - 1); }
+  });
+  function showDemo() {
+    showView('demoView');
+    document.getElementById('dCaption').textContent = tr('dLoading');
+    ensureDemoData(() => {
+      if (!demo.data) demoBuild();
+      demoResize();
+      demoRender();
+    });
+  }
+  function drawStripThumb(canvas) {
+    const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    const c = canvas.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const x0 = 18, x1 = w - 18, y0 = h / 2 - 28, y1 = h / 2 + 28, k = 4, dx = (x1 - x0) / k;
+    c.strokeStyle = '#bdbcb5'; c.lineWidth = 2.5;
+    c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y0); c.moveTo(x0, y1); c.lineTo(x1, y1); c.stroke();
+    c.setLineDash([4, 4]); c.lineWidth = 1.2;
+    for (let i = 0; i <= k; i++) {
+      c.strokeStyle = i === 2 ? '#e08a80' : '#cfcdc6';
+      c.beginPath(); c.moveTo(x0 + i * dx, y0); c.lineTo(x0 + i * dx, y1); c.stroke();
+      if (i < k) { c.strokeStyle = '#cfcdc6'; c.beginPath(); c.moveTo(x0 + (i + 1) * dx, y0); c.lineTo(x0 + i * dx, y1); c.stroke(); }
+    }
+    c.setLineDash([]);
+    for (let i = 0; i <= k; i++) for (let t = 1; t < 7; t++) {
+      const px = x0 + i * dx, py = y0 + (y1 - y0) * t / 7;
+      c.beginPath(); c.arc(px, py, 2.2, 0, 2 * Math.PI); c.fillStyle = i === 2 ? '#c0392b' : (i === 0 || i === k) ? '#9a9993' : '#1d1d1b'; c.fill();
+    }
+  }
+
   // ---------- 关卡界面 ----------
   // 每个浏览器自己记住过了哪些关；存储不可用时（隐私模式等）照常能玩，只是不显示 ✓
   function solvedSet() {
@@ -1023,7 +1323,7 @@
 
   function showView(id) {
     failed = false;
-    for (const v of ['menuView', 'rulesView', 'gameView']) document.getElementById(v).hidden = v !== id;
+    for (const v of ['menuView', 'rulesView', 'gameView', 'demoView']) document.getElementById(v).hidden = v !== id;
     window.scrollTo(0, 0);
   }
 
@@ -1044,6 +1344,13 @@
       list.appendChild(card);
       drawThumb(card.querySelector('canvas'), lv);
     });
+    const dcard = document.createElement('button');
+    dcard.className = 'card';
+    dcard.innerHTML = '<canvas></canvas><div class="meta"><span class="name"></span></div>';
+    dcard.querySelector('.name').textContent = tr('demoCard');
+    dcard.onclick = () => { location.hash = '#demo'; };
+    list.appendChild(dcard);
+    drawStripThumb(dcard.querySelector('canvas'));
     const card = document.createElement('button');
     card.className = 'card create';
     card.innerHTML = '<canvas></canvas><div class="meta"><span class="name"></span></div>';
@@ -1078,6 +1385,7 @@
     }
     else if (location.hash === '#create') { showView('gameView'); resizeCanvas(); startEditor(savedCustom()); }
     else if (location.hash === '#rules') showView('rulesView');
+    else if (location.hash === '#demo') showDemo();
     else showMenu();
   }
   document.getElementById('btnBack').onclick = () => { location.hash = ''; };
@@ -1095,6 +1403,7 @@
   window.addEventListener('hashchange', route);
   window.addEventListener('resize', () => {
     if (!document.getElementById('gameView').hidden) { resizeCanvas(); render(); }
+    else if (!document.getElementById('demoView').hidden) { demoResize(); demoRender(); }
     else if (!document.getElementById('menuView').hidden) showMenu();
   });
   route();
