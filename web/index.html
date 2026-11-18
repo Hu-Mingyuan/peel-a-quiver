@@ -1068,7 +1068,8 @@
   function ensureDemoData(cb) {
     if (window.DEMO_STRIP) { cb(); return; }
     const sc = document.createElement('script');
-    sc.src = (FIXED_LANG ? '../' : '') + 'demo-strip.js';
+    // DEMO_VER 是数据文件的哈希，由 tools/build_site.py 写进页面；数据一变网址就变，浏览器不会用旧的缓存
+    sc.src = (FIXED_LANG ? '../' : '') + 'demo-strip.js' + (window.DEMO_VER ? '?v=' + window.DEMO_VER : '');
     sc.onload = cb;
     document.head.appendChild(sc);
   }

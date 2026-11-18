@@ -8,6 +8,7 @@ web/index.html stays the single source. The build writes
   out/*.js (quiver.js; demo-strip.js is loaded from ../ when the demo opens)
 Hashes (#level-3, #q=..., #rules) are kept by every redirect, so old links keep working.
 """
+import hashlib
 import os
 import shutil
 import sys
@@ -44,8 +45,11 @@ def build(out):
     for f in os.listdir(os.path.join(ROOT, 'web')):          # quiver.js, demo-strip.js, ...
         if f.endswith('.js'):
             shutil.copy(os.path.join(ROOT, 'web', f), os.path.join(out, f))
+    digest = lambda f: hashlib.sha1(open(os.path.join(ROOT, 'web', f), 'rb').read()).hexdigest()[:10]
+    ver, qver = digest('demo-strip.js'), digest('quiver.js')   # 文件一变网址就变，避开浏览器缓存
     for lang, html_lang in (('en', 'en'), ('zh', 'zh-CN')):
-        page = src.replace(tag, f"<script>window.PEEL_LANG = '{lang}';</script>\n<script src=\"../quiver.js\"></script>")
+        page = src.replace(tag, f"<script>window.PEEL_LANG = '{lang}'; window.DEMO_VER = '{ver}';</script>\n"
+                                f"<script src=\"../quiver.js?v={qver}\"></script>")
         page = page.replace('<html lang="en">', f'<html lang="{html_lang}">')
         os.makedirs(os.path.join(out, lang))
         open(os.path.join(out, lang, 'index.html'), 'w', encoding='utf-8').write(page)
