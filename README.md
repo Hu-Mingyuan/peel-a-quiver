@@ -11,4 +11,6 @@ Based on Bernhard Keller's [quiver mutation applet](https://webusers.imj-prg.fr/
 
 Play online: https://hu-mingyuan.github.io/peel-a-quiver/
 
-Run locally: `python3 -m http.server 8080 --directory web`, then open http://localhost:8080/.
+English: https://hu-mingyuan.github.io/peel-a-quiver/en/ · 中文: https://hu-mingyuan.github.io/peel-a-quiver/zh/ (`/ch/` also works)
+
+Run locally: `python3 -m http.server 8080 --directory web`, then open http://localhost:8080/ (one page, the language button switches in place). To try the published layout with `/en/` and `/zh/`: `python3 tools/build_site.py && python3 -m http.server 8080 --directory _site`.

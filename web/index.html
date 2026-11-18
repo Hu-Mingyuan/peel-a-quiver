@@ -300,7 +300,10 @@
   // 静态文字：带 data-i18n 的元素，英文就是 HTML 里原有的内容，中文在 ZH_HTML。
   // 动态文字：tr(key, ...参数)，两种语言都在 TEXT 里。
   const LANG_KEY = 'peel-a-quiver-lang';
+  // 发布的网站里 /en/ 和 /zh/ 由 tools/build_site.py 生成，页面里写好 window.PEEL_LANG；直接打开 web/index.html 时没有它
+  const FIXED_LANG = window.PEEL_LANG === 'en' || window.PEEL_LANG === 'zh' ? window.PEEL_LANG : null;
   let lang = (() => {
+    if (FIXED_LANG) return FIXED_LANG;
     try { const l = localStorage.getItem(LANG_KEY); if (l === 'en' || l === 'zh') return l; } catch (e) { /* ignore */ }
     return (navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en';
   })();
@@ -1078,9 +1081,13 @@
   }
   document.getElementById('btnBack').onclick = () => { location.hash = ''; };
   document.getElementById('btnRulesBack').onclick = () => { location.hash = ''; };
+  // 记住用过的语言，根网址据此跳到 /en/ 或 /zh/
+  if (FIXED_LANG) { try { localStorage.setItem(LANG_KEY, lang); } catch (e) { /* ignore */ } }
   document.getElementById('btnLang').onclick = () => {
-    lang = lang === 'zh' ? 'en' : 'zh';
-    try { localStorage.setItem(LANG_KEY, lang); } catch (e) { /* ignore */ }
+    const other = lang === 'zh' ? 'en' : 'zh';
+    try { localStorage.setItem(LANG_KEY, other); } catch (e) { /* ignore */ }
+    if (FIXED_LANG) { location.href = '../' + other + '/' + location.hash; return; }   // 换到另一种语言的网址，保留 #关卡
+    lang = other;
     applyLang();
   };
   applyLang();
