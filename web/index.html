@@ -1131,13 +1131,16 @@
     dcv.width = Math.round(dcv.clientWidth * dpr); dcv.height = Math.round(dcv.clientHeight * dpr);
     dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const D = demo.data; if (!D) return;
-    const all = layout(D.pos.concat(D.bg.flatMap(g => [g.a, g.b])), dcv.clientWidth, dcv.clientHeight, 34);
+    // 长条很扁（宽 N·W、高 1），竖直方向拉伸到画布的比例，顶点才不挤
+    const pad = 34, k = Math.max(1, Math.min(3.2, (dcv.clientHeight - 2 * pad - 30) / (dcv.clientWidth - 2 * pad) * D.N * D.W));
+    const st = q => [q[0], q[1] * k];
+    const all = layout(D.pos.map(st).concat(D.bg.flatMap(g => [st(g.a), st(g.b)])), dcv.clientWidth, dcv.clientHeight, pad);
     demo.pts = all.slice(0, D.pos.length);
     demo.bg = D.bg.map((g, k) => ({ a: all[D.pos.length + 2 * k], b: all[D.pos.length + 2 * k + 1], ga: g.a, gb: g.b }));
-    const ys = D.pos.map(p => p[1]);
-    demo.scale = (demo.pts[0].x - demo.pts[1].x) || 1;
-    const unit = Math.abs(all[D.pos.length].x - all[D.pos.length + 1].x) / (D.N * D.W) || 1;   // 像素 / 单位长度
-    demo.r = Math.max(3, Math.min(9, unit / D.n * 0.36));
+    let dmin = Infinity;                                        // 顶点之间的最小距离决定半径
+    for (let i = 0; i < demo.pts.length; i++) for (let j = i + 1; j < demo.pts.length; j++)
+      dmin = Math.min(dmin, Math.hypot(demo.pts[i].x - demo.pts[j].x, demo.pts[i].y - demo.pts[j].y));
+    demo.r = Math.max(3, Math.min(10, dmin * 0.3));
   }
   function demoRender() {
     const D = demo.data, c = dctx, w = dcv.clientWidth, h = dcv.clientHeight;
