@@ -744,10 +744,13 @@
       c.beginPath(); c.moveTo(g.a.x, g.a.y); c.lineTo(g.b.x, g.b.y); c.stroke();
       c.setLineDash([]);
       if (g.label) {
-        const top = g.a.y < g.b.y ? g.a : g.b;
+        // 竖的弧把名字写在长条上方，斜的弧写在下方（斜弧和竖弧共用上端点，写在一起会重叠）
+        const top = g.a.y < g.b.y ? g.a : g.b, bot = g.a.y < g.b.y ? g.b : g.a;
+        const vertical = Math.abs(g.a.x - g.b.x) < 1;
         c.fillStyle = g.label.startsWith('ℓ') ? '#c0392b' : '#6b6b66';
-        c.font = '600 13px -apple-system, Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'bottom';
-        c.fillText(g.label, top.x, top.y - 6);
+        c.font = '600 13px -apple-system, Arial, sans-serif'; c.textAlign = 'center';
+        if (vertical) { c.textBaseline = 'bottom'; c.fillText(g.label, top.x, top.y - 6); }
+        else { c.textBaseline = 'top'; c.fillText(g.label, bot.x, bot.y + 6); }
       }
     }
   }
