@@ -2,6 +2,8 @@
 // 曲面 S：亏格 g，b 个边界圆，每个边界圆上至少一个标记点，没有穿孔。这正是 Ice and mirrors 第二节
 // 的假设 (surface-assumption)，Theorem (surface-quiver) 说这时 SL_n 的 Fock–Goncharov 箭图（任何种子）
 // 都是 sub-peelable 的，所以每一关都有解（可能要加辅助顶点）。
+// 平时只出电脑验证过不加辅助顶点就能剥的曲面；每 4 关（第 4、8、12……关）出一个“加 node 关”，
+// 曲面从电脑没找到不加顶点剥法的那些里挑（例如第 3、4、5 关的曲面）。
 // 做法：把 S 写成多边形粘合（和 tools/fg_surface.py 的 fg_polygon 一样），从 0 号角扇形剖分，
 // 算出 FG 箭图（去掉边界上的 frozen 顶点），再随机突变几次打乱，最后用 stress 布局摆位置。
 // 浏览器里挂在 window.PeelChallenge 上，node 里 require（测试用）。
@@ -160,12 +162,13 @@
   // 所有可选的曲面：g ≤ 2，b ≤ 3，每个边界圆 1..4 个标记点，n = 2, 3, 4，顶点数 3..28。
   // 去掉 UNVERIFIED 里的曲面：对它们的三角剖分箭图，tools/solve_aux.py 的贪心求解器（BFS 深度 ≤ 5，限时）
   // 没找到不加顶点的剥法（例如 2:1:1 就是第 3 关，3:1:1 是第 5 关）。其余每种曲面的箭图都被求解器剥空过，
-  // 而 peelable 在突变下不变，所以挑战模式的每一关都能不加辅助顶点剥完。键是 "n:g:各边界圆的标记点数"。
+  // 而 peelable 在突变下不变，所以普通关都能不加辅助顶点剥完。UNVERIFIED 的曲面只用在加 node 关（NODE_SURFACES）。
+  // 键是 "n:g:各边界圆的标记点数"。
   const UNVERIFIED = new Set(('2:1:1 2:2:1 3:0:1-1-1 3:0:2-1-1 3:0:2-2-1 3:0:2-2-2 3:0:3-1-1 3:0:3-2-1 3:0:3-3 3:0:4-1-1 ' +
     '3:0:4-2 3:0:4-3 3:0:4-4 3:1:1 3:1:1-1 3:1:2 3:1:2-1 3:1:2-2 3:1:3 3:1:3-1 3:1:4 3:2:1 4:0:1-1 4:0:2-1 4:0:2-2 ' +
     '4:0:3-1 4:1:1 4:1:2').split(' '));
   const surfaceKey = s => `${s.n}:${s.g}:${s.ms.join('-')}`;
-  const ALL_SURFACES = [], SURFACES = [];
+  const ALL_SURFACES = [], SURFACES = [], NODE_SURFACES = [];
   (function () {
     function parts(b, maxEach) {                       // 边界标记点数，按不增排列（交换边界圆是同一个曲面）
       const out = [];
@@ -182,7 +185,7 @@
         const V = countVertices(g, ms, n);
         if (V < 3 || V > 28) continue;
         ALL_SURFACES.push({ g, ms, n, V });
-        if (!UNVERIFIED.has(surfaceKey({ g, ms, n }))) SURFACES.push({ g, ms, n, V });
+        (UNVERIFIED.has(surfaceKey({ g, ms, n })) ? NODE_SURFACES : SURFACES).push({ g, ms, n, V });
       }
     }
   })();
@@ -193,10 +196,15 @@
     return [lo, hi];
   }
 
+  // 加 node 关：第 4、8、12……关
+  const isNodeRound = round => round >= 4 && round % 4 === 0;
+
   function generate(round, seed) {
     const rand = rng(seed);
     const [lo, hi] = sizeRange(round);
-    const pool = SURFACES.filter(s => s.V >= lo && s.V <= hi);
+    const inRange = list => list.filter(s => s.V >= lo && s.V <= hi);
+    const nodeLevel = isNodeRound(round) && inRange(NODE_SURFACES).length > 0;
+    const pool = inRange(nodeLevel ? NODE_SURFACES : SURFACES);
     const surf = pool[Math.floor(rand() * pool.length)];
     const sides = polygonWord(surf.g, surf.ms);
     let B = fgPolygon(sides, surf.n);
@@ -217,13 +225,13 @@
     B = perm.map(i => perm.map(j => B[i][j]));
     return {
       B, pos: layoutStress(B, rand), labels: B.map((_, i) => i + 1),
-      surface: { g: surf.g, ms: surf.ms.slice(), n: surf.n }, mutations: done,
+      surface: { g: surf.g, ms: surf.ms.slice(), n: surf.n }, mutations: done, nodeLevel,
     };
   }
 
   // 曲面的文字描述
   const SUBN = { 2: '₂', 3: '₃', 4: '₄' };
-  function describe(s, mutations, lang) {
+  function describe(s, mutations, lang, nodeLevel) {
     const b = s.ms.length, n = SUBN[s.n], ms = s.ms;
     if (lang === 'zh') {
       const NUM = ['零', '一', '两', '三', '四'];
@@ -235,7 +243,9 @@
       }
       return `SL${n} 的 Fock–Goncharov 箭图${s.n === 2 ? '（也就是理想三角剖分的箭图）' : ''}，曲面是${surf}。` +
         `从一个三角剖分的箭图出发，随机突变了 ${mutations} 次。边界上的顶点是冻结的，这里去掉了。` +
-        '所有标记点都在边界上、没有穿孔，所以由 Ice and mirrors 的 Theorem 2.1，这个箭图是子可剥的。挑战模式只用电脑验证过的曲面：它们的箭图不加辅助顶点就能剥完。';
+        '所有标记点都在边界上、没有穿孔，所以由 Ice and mirrors 的 Theorem 2.1，这个箭图是子可剥的：加辅助顶点一定能剥完。' +
+        (nodeLevel ? '这是加顶点关：对这个曲面，电脑没找到不加辅助顶点的剥法，可能要用“加辅助顶点”。'
+          : '这一关的曲面电脑验证过：不加辅助顶点就能剥完。');
     }
     const word = k => ['zero', 'one', 'two', 'three', 'four'][k];
     let surf;
@@ -248,10 +258,12 @@
     }
     return `The Fock–Goncharov quiver for SL${n}${s.n === 2 ? ' (the quiver of an ideal triangulation)' : ''} on ${surf}. ` +
       `Starting from the quiver of a triangulation, ${mutations} random mutations were applied. The vertices on the boundary are frozen and left out. ` +
-      'Every marked point is on the boundary and there are no punctures, so by Theorem 2.1 of Ice and mirrors the quiver is sub-peelable. Challenge mode only uses surfaces checked by computer: their quivers can be peeled without auxiliary nodes.';
+      'Every marked point is on the boundary and there are no punctures, so by Theorem 2.1 of Ice and mirrors the quiver is sub-peelable: it can always be peeled with auxiliary nodes. ' +
+      (nodeLevel ? 'This is a node level: for this surface the computer found no way to peel without auxiliary nodes, so you may need “Add node”.'
+        : 'This surface was checked by computer: it can be peeled without auxiliary nodes.');
   }
 
-  const api = { rng, countVertices, polygonWord, noPunctures, fgPolygon, ALL_SURFACES, SURFACES, surfaceKey, sizeRange, generate, describe };
+  const api = { rng, countVertices, polygonWord, noPunctures, fgPolygon, ALL_SURFACES, SURFACES, NODE_SURFACES, surfaceKey, sizeRange, isNodeRound, generate, describe };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.PeelChallenge = api;
 })(typeof window !== 'undefined' ? window : globalThis);

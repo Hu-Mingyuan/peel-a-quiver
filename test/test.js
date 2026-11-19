@@ -189,6 +189,7 @@ assert.ok(SP.locked.every(g => labS.includes(g)));
   const PC = require('../web/challenge.js');
   assert.strictEqual(PC.ALL_SURFACES.length, 143);
   assert.strictEqual(PC.SURFACES.length, 115);
+  assert.strictEqual(PC.NODE_SURFACES.length, 28);
   for (const s of PC.ALL_SURFACES) {
     const w = PC.polygonWord(s.g, s.ms);
     assert.ok(PC.noPunctures(w), JSON.stringify(s));
@@ -202,6 +203,13 @@ assert.ok(SP.locked.every(g => labS.includes(g)));
     const n = a.B.length, [lo, hi] = PC.sizeRange(r);
     assert.ok(n >= lo && n <= hi && a.pos.length === n && a.labels.length === n);
     for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) assert.ok(a.B[i][j] === -a.B[j][i] && Math.abs(a.B[i][j]) <= 2);
+  }
+  // 加 node 关：第 4、8、12……关的曲面来自 NODE_SURFACES，其余关来自 SURFACES
+  const key = g => PC.surfaceKey(g.surface), nodeKeys = new Set(PC.NODE_SURFACES.map(PC.surfaceKey));
+  for (let r = 1; r <= 40; r++) for (const seed of [5, 77]) {
+    const g = PC.generate(r, seed);
+    assert.strictEqual(g.nodeLevel, PC.isNodeRound(r));
+    assert.strictEqual(nodeKeys.has(key(g)), g.nodeLevel);
   }
 }
 
