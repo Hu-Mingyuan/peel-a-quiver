@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Peel a quiver</title>
+<script>
+  // GoatCounter 访问统计（后台 https://quiver.goatcounter.com），不用 cookie。
+  // 每个 #关卡 算一个页面；分享链接 #q=... 只记成 #q，不记箭图内容
+  window.goatcounter = { path: () => location.pathname + (location.hash.startsWith('#q=') ? '#q' : location.hash) };
+</script>
+<script data-goatcounter="https://quiver.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 <style>
   :root {
     --bg: #fafaf7; --fg: #1d1d1b; --muted: #6b6b66; --line: #d9d8d2;
@@ -1462,7 +1468,10 @@
     applyLang();
   };
   applyLang();
-  window.addEventListener('hashchange', route);
+  window.addEventListener('hashchange', () => {
+    route();
+    if (window.goatcounter && window.goatcounter.count) window.goatcounter.count();   // 换关也记一次访问
+  });
   window.addEventListener('resize', () => {
     if (!document.getElementById('gameView').hidden) { resizeCanvas(); render(); }
     else if (!document.getElementById('demoView').hidden) { demoResize(); demoRender(); }
