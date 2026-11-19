@@ -231,7 +231,7 @@
 
   // 曲面的文字描述
   const SUBN = { 2: '₂', 3: '₃', 4: '₄' };
-  function describe(s, mutations, lang, nodeLevel) {
+  function describe(s, mutations, lang) {
     const b = s.ms.length, n = SUBN[s.n], ms = s.ms;
     if (lang === 'zh') {
       const NUM = ['零', '一', '两', '三', '四'];
@@ -243,9 +243,7 @@
       }
       return `SL${n} 的 Fock–Goncharov 箭图${s.n === 2 ? '（也就是理想三角剖分的箭图）' : ''}，曲面是${surf}。` +
         `从一个三角剖分的箭图出发，随机突变了 ${mutations} 次。边界上的顶点是冻结的，这里去掉了。` +
-        '所有标记点都在边界上、没有穿孔，所以由 Ice and mirrors 的 Theorem 2.1，这个箭图是子可剥的：加辅助顶点一定能剥完。' +
-        (nodeLevel ? '这是加顶点关：对这个曲面，电脑没找到不加辅助顶点的剥法，可能要用“加辅助顶点”。'
-          : '这一关的曲面电脑验证过：不加辅助顶点就能剥完。');
+        '所有标记点都在边界上、没有穿孔，所以由 Ice and mirrors 的 Theorem 2.1，这个箭图是子可剥的：必要时加辅助顶点，一定能剥完。';
     }
     const word = k => ['zero', 'one', 'two', 'three', 'four'][k];
     let surf;
@@ -258,9 +256,7 @@
     }
     return `The Fock–Goncharov quiver for SL${n}${s.n === 2 ? ' (the quiver of an ideal triangulation)' : ''} on ${surf}. ` +
       `Starting from the quiver of a triangulation, ${mutations} random mutations were applied. The vertices on the boundary are frozen and left out. ` +
-      'Every marked point is on the boundary and there are no punctures, so by Theorem 2.1 of Ice and mirrors the quiver is sub-peelable: it can always be peeled with auxiliary nodes. ' +
-      (nodeLevel ? 'This is a node level: for this surface the computer found no way to peel without auxiliary nodes, so you may need “Add node”.'
-        : 'This surface was checked by computer: it can be peeled without auxiliary nodes.');
+      'Every marked point is on the boundary and there are no punctures, so by Theorem 2.1 of Ice and mirrors the quiver is sub-peelable: it can always be peeled, if necessary with auxiliary nodes.';
   }
 
   const api = { rng, countVertices, polygonWord, noPunctures, fgPolygon, ALL_SURFACES, SURFACES, NODE_SURFACES, surfaceKey, sizeRange, isNodeRound, generate, describe };
