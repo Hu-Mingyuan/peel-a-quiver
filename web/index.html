@@ -408,7 +408,7 @@
       dStart: 'Start. Press “Next step”.',
       dMu: (i, L, name) => `Next (${i}/${L}): mutate at ${name}.`,
       dPeel: (t, kind, none) => none ? `${t} is already a ${kind}, no mutation needed. Next: peel it.` : `${t} is now a ${kind}. Next: peel it.`,
-      dUndo: (L) => `Peeled. Next: undo the ${L} mutation${L === 1 ? '' : 's'} (in reverse order).`,
+      dBack: (j, L, name) => (j === 1 ? 'Peeled. Now mutate back, in reverse order. ' : '') + `Next (back ${j}/${L}): mutate at ${name} again.`,
       dHoverE: (e, k) => `point ${k} on e${sub(e)}`, dHoverT: (t, abc) => `point ${abc} in τ${sub(t)}`,
       dDone: 'Done: every vertex on ℓ is peeled, and e₀, e₆ were never touched.',
       dCount: (m, M, mu) => `Deletion move ${m} of ${M} · ${mu} mutations so far`,
@@ -461,7 +461,7 @@
       dStart: '开始。按“下一步”。',
       dMu: (i, L, name) => `下一步（${i}/${L}）：在 ${name} 处突变。`,
       dPeel: (t, kind, none) => none ? `${t} 本来就是${kind}，不用突变。下一步：剥掉它。` : `${t} 现在是${kind}。下一步：剥掉它。`,
-      dUndo: (L) => `已剥掉。下一步：把这 ${L} 次突变倒回去（倒序）。`,
+      dBack: (j, L, name) => (j === 1 ? '已剥掉。现在按倒序把突变做回去。' : '') + `下一步（倒回 ${j}/${L}）：再在 ${name} 处突变一次。`,
       dHoverE: (e, k) => `e${sub(e)} 上第 ${k} 个点`, dHoverT: (t, abc) => `τ${sub(t)} 内的点 ${abc}`,
       dDone: '完成：ℓ 上的顶点全部剥掉了，e₀、e₆ 上的顶点从没动过。',
       dCount: (m, M, mu) => `第 ${m}/${M} 个 deletion move · 已做 ${mu} 次突变`,
@@ -1090,9 +1090,10 @@
       if (!(m.round in roundStart)) roundStart[m.round] = st.length;
       m.word.forEach((k, i) => { st.push({ type: 'mu', move: mi, i, k }); });
       st.push({ type: 'peel', move: mi });
-      if (m.word.length) st.push({ type: 'undo', move: mi });
+      // 剥完再把突变一个一个倒回去：倒序在同样的顶点再突变一次（突变是对合）
+      for (let j = 0; j < m.word.length; j++) { const i = m.word.length - 1 - j; st.push({ type: 'back', move: mi, i, j, k: m.word[i] }); }
     });
-    st.forEach((x, i) => { muBefore[i] = mu; mu += x.type === 'mu' ? 1 : x.type === 'undo' ? D.steps[x.move].word.length : 0; });
+    st.forEach((x, i) => { muBefore[i] = mu; mu += x.type === 'peel' ? 0 : 1; });
     muBefore[st.length] = mu;
     const B = Array.from({ length: V }, () => new Array(V).fill(0));
     for (const [i, j, v] of D.arrows) { B[i][j] = v; B[j][i] = 0 - v; }
@@ -1106,12 +1107,12 @@
   }
   function demoApply(x) {
     const m = demo.data.steps[x.move];
-    if (x.type === 'mu') demo.B = Q.mutate(demo.B, x.k);
-    else if (x.type === 'peel') {
+    if (x.type === 'mu' || x.type === 'back') demo.B = Q.mutate(demo.B, x.k);
+    else {
       const s = m.target;
       for (let i = 0; i < demo.B.length; i++) { demo.B[i][s] = 0; demo.B[s][i] = 0; }
       demo.alive[s] = false;
-    } else for (let i = m.word.length - 1; i >= 0; i--) demo.B = Q.mutate(demo.B, m.word[i]);
+    }
   }
   // 跳到第 idx 步之后的局面：往前直接算，往回从最近的快照（每个 deletion move 开头存一份）重算
   function demoGo(idx) {
@@ -1192,9 +1193,10 @@
       if (Math.abs(B[i][j]) > 1) { c.font = '600 10px -apple-system, Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
         c.fillText(String(Math.abs(B[i][j])), (a.x + b.x) / 2 + 6, (a.y + b.y) / 2 - 6); }
     }
-    // 当前 deletion move 的突变序列：已做过的浅紫，下一个深紫，标上次序
-    const order = new Map();
+    // 当前 deletion move 的突变序列（倒回时是倒序）：已做过的浅紫，下一个深紫，标上次序
+    const order = new Map(), L = m ? m.word.length : 0, cur = x && x.type === 'back' ? x.j : x ? x.i : 0;
     if (m && x.type === 'mu') m.word.forEach((k, i) => order.set(k, i));
+    if (m && x.type === 'back') m.word.forEach((k, i) => order.set(k, L - 1 - i));
     for (let i = 0; i < V; i++) {
       const p = P[i];
       if (!A[i]) {          // 已剥掉：淡色虚线圈
@@ -1202,7 +1204,7 @@
         c.strokeStyle = '#d0cfc8'; c.lineWidth = 1; c.stroke(); c.setLineDash([]); continue;
       }
       let fill = '#fff';
-      if (order.has(i)) fill = order.get(i) < x.i ? '#e4d8f5' : order.get(i) === x.i ? getVar('--aux') : '#fff';
+      if (order.has(i)) fill = order.get(i) < cur ? '#e4d8f5' : order.get(i) === cur ? getVar('--aux') : '#fff';
       if (i === s && (Q.isSink(B, i) || Q.isSource(B, i)))
         fill = Q.isSink(B, i) && Q.isSource(B, i) ? getVar('--both') : Q.isSink(B, i) ? getVar('--sink') : getVar('--source');
       c.beginPath();
@@ -1211,7 +1213,7 @@
       c.strokeStyle = '#1d1d1b'; c.lineWidth = 1.2; c.stroke();
       if (i === s) { c.beginPath(); c.arc(p.x, p.y, r + 4, 0, 2 * Math.PI); c.strokeStyle = '#c0392b'; c.lineWidth = 2.5; c.stroke(); }
       else if (demo.goal.has(i)) { c.beginPath(); c.arc(p.x, p.y, r + 2.5, 0, 2 * Math.PI); c.strokeStyle = '#e08a80'; c.lineWidth = 1.3; c.stroke(); }
-      if (order.has(i) && order.get(i) >= x.i) {
+      if (order.has(i) && order.get(i) >= cur) {
         c.fillStyle = '#5b3a9a'; c.font = '600 10px -apple-system, Arial, sans-serif'; c.textAlign = 'left'; c.textBaseline = 'bottom';
         c.fillText(String(order.get(i) + 1), p.x + r - 1, p.y - r + 1);
       }
@@ -1230,7 +1232,7 @@
       else if (x.type === 'peel') {
         const kind = Q.isSink(B, s) && Q.isSource(B, s) ? 'isolated' : Q.isSink(B, s) ? 'sink' : 'source';
         line = tr('dPeel', tn, KIND[lang][kind], m.word.length === 0);
-      } else line = tr('dUndo', m.word.length);
+      } else line = tr('dBack', x.j + 1, m.word.length, paperName(m.wnames[x.i]));
       cap.innerHTML = '';
       const a = document.createElement('div'); a.textContent = tr('dHead', m.round, m.round - 1, lem, wh, tn); a.style.fontWeight = '600';
       const b = document.createElement('div'); b.textContent = demo.idx === 0 ? tr('dStart') + ' ' + line : line;
